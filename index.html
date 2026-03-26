@@ -134,7 +134,7 @@
       </button>
     </div>
   </div>
-  <div class="hero-scroll" aria-hidden="true">scroll</div>
+  <!--<div class="hero-scroll" aria-hidden="true">scroll</div>-->
 </section>
 
 </div><!-- /page-home -->
@@ -347,9 +347,9 @@
       </button>
     </div>
 
-    <div class="modal-body">
-      <div class="modal-thumb-wrap" id="modal-thumb-wrap"></div>
+    <div class="modal-thumb-wrap" id="modal-thumb-wrap"></div>
 
+    <div class="modal-body">
       <section class="modal-section">
         <h3 class="modal-section-title">about</h3>
         <p class="modal-desc" id="modal-desc"></p>
@@ -483,7 +483,13 @@
         close
       </button>
     </div>
-    <iframe id="ds-frame" class="ds-frame" src="" frameborder="0" title="Design Sheet Calculator"></iframe>
+    <div class="ds-frame-wrap">
+      <div class="ds-loading" id="ds-loading">
+        <div class="ds-spinner"></div>
+        <span>loading calculator…</span>
+      </div>
+      <iframe id="ds-frame" class="ds-frame" src="" frameborder="0" title="Design Sheet Calculator"></iframe>
+    </div>
   </div>
 </div>
 

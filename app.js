@@ -95,7 +95,7 @@ const designSheets = [
     platform: "Web",
     framework: "Vanilla JS",
     thumbnail: null,
-    screenshots: ["images/pumpsetup.jpg"],
+    screenshots: ["images/pump1.png", "images/pump2.png"],
     downloadUrl: "pump-selection.html",
     sourceUrl: "",
     isWebTool: true,
@@ -619,7 +619,6 @@ function renderCards() {
 
   grid.innerHTML = filtered.map(app => `
     <article class="app-card cat-accent-${escapeHtml(app.category)}" data-id="${escapeHtml(app.id)}">
-      ${thumbnailHtml(app.screenshots, app.name)}
       <div class="card-name-header">
         <span class="card-name">${escapeHtml(app.name)}</span>
         <span class="card-version">v${escapeHtml(app.version)}</span>
@@ -627,6 +626,7 @@ function renderCards() {
       <div class="card-body">
         <span class="card-category ${categoryClass(app.category)}">${escapeHtml(app.category)}</span>
         <p class="card-desc">${escapeHtml(app.description)}</p>
+        ${thumbnailHtml(app.screenshots, app.name)}
       </div>
       <div class="card-footer">
         <button class="btn-details" data-id="${escapeHtml(app.id)}">
@@ -730,7 +730,6 @@ function renderDesignSheets() {
 
   grid.innerHTML = designSheets.map(sheet => `
     <article class="app-card cat-accent-${escapeHtml(sheet.category.replace(/\s+/g, ""))}" data-id="${escapeHtml(sheet.id)}">
-      ${thumbnailHtml(sheet.screenshots, sheet.name)}
       <div class="card-name-header">
         <span class="card-name">${escapeHtml(sheet.name)}</span>
         <span class="card-version">v${escapeHtml(sheet.version)}</span>
@@ -738,6 +737,7 @@ function renderDesignSheets() {
       <div class="card-body">
         <span class="card-category ${categoryClass(sheet.category)}">${escapeHtml(sheet.category)}</span>
         <p class="card-desc">${escapeHtml(sheet.description)}</p>
+        ${thumbnailHtml(sheet.screenshots, sheet.name)}
       </div>
       <div class="card-footer">
         <button class="btn-details" data-id="${escapeHtml(sheet.id)}">
@@ -880,15 +880,30 @@ function closeToolModal() {
    Design Sheet Full-Screen Modal
 ───────────────────────────────────────────── */
 function openDsModal(sheet) {
-  const overlay = document.getElementById("ds-modal-overlay");
-  const frame   = document.getElementById("ds-frame");
+  const overlay  = document.getElementById("ds-modal-overlay");
+  const frame    = document.getElementById("ds-frame");
+  const loading  = document.getElementById("ds-loading");
   if (!overlay || !frame) return;
 
   document.getElementById("ds-modal-name").textContent = sheet.name;
   document.getElementById("ds-modal-ver").textContent  = `v${sheet.version}`;
   document.getElementById("ds-modal-cat").textContent  = sheet.category;
 
-  frame.src = sheet.downloadUrl;
+  // Only reload iframe when switching to a different sheet
+  const targetSrc = sheet.downloadUrl;
+  const alreadyLoaded = frame.dataset.loadedSrc === targetSrc;
+
+  if (!alreadyLoaded) {
+    // Show spinner, hide when iframe finishes loading
+    if (loading) loading.classList.remove("hidden");
+    frame.onload = () => { if (loading) loading.classList.add("hidden"); };
+    frame.src = targetSrc;
+    frame.dataset.loadedSrc = targetSrc;
+  } else {
+    // Already loaded — hide spinner immediately
+    if (loading) loading.classList.add("hidden");
+  }
+
   overlay.classList.add("open");
   document.body.style.overflow = "hidden";
   document.getElementById("ds-modal-close").focus();
@@ -901,9 +916,8 @@ function openDsModal(sheet) {
 
 function closeDsModal() {
   const overlay = document.getElementById("ds-modal-overlay");
-  const frame   = document.getElementById("ds-frame");
+  // Keep iframe src intact so re-opening the same sheet is instant
   if (overlay) overlay.classList.remove("open");
-  if (frame)   frame.src = "";
   document.body.style.overflow = "";
 }
 
