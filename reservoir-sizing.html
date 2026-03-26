@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reservoir Sizing ··· Water Supply Design Tool</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='2' y='3' width='9' height='9' rx='1.5' fill='%234a9eff'/%3E%3Crect x='13' y='3' width='9' height='9' rx='1.5' fill='%234a9eff' opacity='0.6'/%3E%3Crect x='2' y='14' width='9' height='9' rx='1.5' fill='%234a9eff' opacity='0.6'/%3E%3Crect x='13' y='14' width='9' height='9' rx='1.5' fill='%234a9eff' opacity='0.3'/%3E%3C/svg%3E">
+  <!-- Inherit app theme from main library -->
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem("app-theme") || "serika-dark";
+      document.documentElement.setAttribute("data-theme", t);
+      // Apply any custom vars saved by the user
+      try {
+        var cv = JSON.parse(localStorage.getItem("app-custom-vars") || "{}");
+        Object.entries(cv).forEach(function(e) {
+          document.documentElement.style.setProperty(e[0], e[1]);
+        });
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       var(--bg-color,      #0d1117);
+      --surface:  var(--sub-alt-color, #161b22);
+      --border:   var(--border-color,  #30363d);
+      --text:     var(--text-color,    #e6edf3);
+      --muted:    var(--sub-color,     #8b949e);
+      --accent:   var(--main-color,    #58a6ff);
+      --green:    #2ecc71;
+      --red:      var(--error-color,   #e74c3c);
+      --orange:   #e67e22;
+      --yellow:   #f5a623;
+    }
+
+    html, body {
+      min-height: 100%;
+      font-family: var(--font);
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* ── Header ────────────────────────────────── */
+    .tool-header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 0 20px; height: 52px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .back-link {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--muted); text-decoration: none;
+      font-size: 12px; font-weight: 500; white-space: nowrap;
+      padding: 5px 10px; border: 1px solid var(--border); border-radius: 5px;
+      transition: color .15s, border-color .15s;
+    }
+    .back-link:hover { color: var(--text); border-color: var(--accent); }
+    .tool-title-group { flex: 1; }
+    .tool-title-group h1 { font-size: 15px; font-weight: 700; }
+    .tool-subtitle { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .print-btn {
+      padding: 5px 14px; background: transparent;
+      border: 1px solid var(--border); border-radius: 5px;
+      color: var(--muted); font-size: 12px; cursor: pointer; font-family: inherit;
+      transition: all .15s;
+    }
+    .print-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── System tabs ────────────────────────────── */
+    .sys-tabs {
+      display: flex; background: var(--bg);
+      border-bottom: 1px solid var(--border); padding: 0 20px;
+    }
+    .sys-tab {
+      padding: 10px 18px; background: transparent; border: none;
+      border-bottom: 2px solid transparent; color: var(--muted);
+      font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
+      transition: color .15s, border-color .15s; margin-bottom: -1px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .sys-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .sys-tab:hover:not(.active) { color: var(--text); }
+
+    /* ── Body layout ────────────────────────────── */
+    .tool-body { display: flex; height: calc(100vh - 88px); }
+
+    /* ── Input panel ────────────────────────────── */
+    .input-panel {
+      width: 290px; min-width: 290px;
+      background: var(--surface); border-right: 1px solid var(--border);
+      overflow-y: auto;
+    }
+    .panel-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .panel-section h3 {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); margin-bottom: 12px;
+    }
+    .input-row { margin-bottom: 10px; }
+    .input-row:last-child { margin-bottom: 0; }
+    .input-label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; font-weight: 500; }
+    .input-group { display: flex; }
+    .tool-input {
+      flex: 1; padding: 7px 10px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
+      color: var(--text); font-size: 13px; font-family: inherit; outline: none; width: 100%;
+      transition: border-color .15s;
+    }
+    .tool-input:focus { border-color: var(--accent); }
+    .tool-input.with-unit { border-radius: 5px 0 0 5px; }
+    .unit-badge {
+      padding: 7px 10px; background: var(--surface);
+      border: 1px solid var(--border); border-left: none; border-radius: 0 5px 5px 0;
+      color: var(--muted); font-size: 11px; white-space: nowrap;
+      display: flex; align-items: center;
+    }
+    .unit-select {
+      padding: 7px 8px; background: var(--surface);
+      border: 1px solid var(--border); border-left: none; border-radius: 0 5px 5px 0;
+      color: var(--muted); font-size: 11px; font-family: inherit; cursor: pointer; outline: none;
+    }
+    .tool-select {
+      width: 100%; padding: 7px 10px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
+      color: var(--text); font-size: 13px; font-family: inherit; outline: none; cursor: pointer;
+    }
+    .tool-select:focus { border-color: var(--accent); }
+    .hint-text { font-size: 10px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+    .hint-text .hl { color: var(--accent); }
+
+    /* ── Main area ──────────────────────────────── */
+    .main-area { flex: 1; overflow: auto; display: flex; flex-direction: column; min-width: 0; }
+
+    /* ── Results strip ──────────────────────────── */
+    .results-strip {
+      display: flex; flex-wrap: wrap; gap: 0;
+      background: var(--bg); border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .result-card {
+      padding: 12px 18px; border-right: 1px solid var(--border); min-width: 120px;
+    }
+    .result-card.highlight { background: color-mix(in srgb, var(--accent) 6%, var(--bg)); border-top: 2px solid var(--accent); }
+    .rc-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 3px; }
+    .rc-value {
+      font-size: 18px; font-weight: 700; color: var(--accent);
+      font-family: var(--font); line-height: 1.2;
+    }
+    .result-card.highlight .rc-value { font-size: 22px; }
+    .rc-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Sheet section ──────────────────────────── */
+    .sheet-section { padding: 18px 18px 0; flex-shrink: 0; }
+    .sheet-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+    .sheet-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+    .sheet-note { font-size: 11px; color: var(--muted); }
+    .sheet-note b { color: var(--green); }
+    .sheet-note .max-lbl { color: var(--green); }
+    .sheet-note .min-lbl { color: var(--red); }
+
+    .sheet-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; }
+
+    .design-sheet { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 820px; }
+    .design-sheet thead { background: var(--bg); }
+    .design-sheet thead tr:first-child { border-bottom: 1px solid var(--border); }
+    .design-sheet thead tr:last-child { border-bottom: 2px solid var(--border); }
+    .design-sheet th {
+      padding: 7px 10px; text-align: center;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+      color: var(--muted); white-space: nowrap; border-right: 1px solid var(--border);
+    }
+    .design-sheet th.th-edit { color: var(--green); }
+    .design-sheet th:last-child { border-right: none; }
+
+    .design-sheet tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+    .design-sheet tbody tr:hover { background: color-mix(in srgb, var(--surface) 60%, var(--bg)); }
+    .design-sheet td {
+      padding: 5px 10px; text-align: right; border-right: 1px solid var(--border);
+      font-family: var(--font); font-size: 12px; color: var(--text);
+      white-space: nowrap;
+    }
+    .design-sheet td:last-child { border-right: none; }
+    .td-sn  { text-align: center !important; color: var(--muted) !important; font-weight: 600; }
+    .td-time { text-align: center !important; color: var(--muted) !important; font-size: 11px !important; }
+    .td-factor { color: var(--muted) !important; font-size: 11px !important; }
+    .td-calc { color: var(--text); }
+
+    /* Editable % cell */
+    .td-edit { padding: 3px 8px !important; text-align: center !important; }
+    .pct-input {
+      width: 62px; padding: 3px 6px;
+      background: color-mix(in srgb, var(--green) 12%, var(--bg)); border: 1px solid var(--green); border-radius: 3px;
+      color: var(--green); font-size: 12px; text-align: center;
+      font-family: var(--font);
+      outline: none; transition: background .15s, border-color .15s;
+    }
+    .pct-input:focus { background: color-mix(in srgb, var(--green) 18%, var(--bg)); border-color: var(--green); }
+
+    /* Net balance color coding */
+    .td-pos { color: var(--green) !important; font-weight: 600; }
+    .td-neg { color: var(--red)   !important; font-weight: 600; }
+    .td-zer { color: var(--muted) !important; }
+
+    /* Highlight max/min rows */
+    .row-max { background: color-mix(in srgb, var(--green) 8%, var(--bg)) !important; }
+    .row-min { background: color-mix(in srgb, var(--red) 8%, var(--bg)) !important; }
+
+    /* Footer row */
+    .design-sheet tfoot { background: var(--bg); border-top: 2px solid var(--border); }
+    .design-sheet tfoot td {
+      padding: 8px 10px; font-weight: 700; color: var(--text);
+      border-right: 1px solid var(--border);
+    }
+    .design-sheet tfoot td:last-child { border-right: none; }
+
+    /* ── Balancing storage callout ──────────────── */
+    .bs-callout {
+      display: flex; flex-wrap: wrap; gap: 0;
+      background: color-mix(in srgb, var(--accent) 6%, var(--bg)); border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .bs-item {
+      padding: 10px 18px; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .bs-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+    .bs-val { font-size: 15px; font-weight: 700; font-family: var(--font); }
+    .bs-val.pos { color: var(--green); }
+    .bs-val.neg { color: var(--red); }
+    .bs-val.acc { color: var(--accent); }
+
+    /* ── Recommendations ────────────────────────── */
+    .rec-section { padding: 18px; flex-shrink: 0; }
+    .rec-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .rec-hdr {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--border);
+    }
+    .rec-hdr h3 { font-size: 13px; font-weight: 700; }
+    .rec-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px; padding: 14px;
+    }
+    .rec-item {
+      display: flex; gap: 10px; padding: 12px 14px;
+      border-radius: 6px; border: 1px solid var(--border); align-items: flex-start;
+    }
+    .rec-item.r-good { border-color: var(--green);  background: color-mix(in srgb, var(--green) 8%, var(--bg)); }
+    .rec-item.r-warn { border-color: var(--orange); background: color-mix(in srgb, var(--orange) 8%, var(--bg)); }
+    .rec-item.r-info { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--bg)); }
+    .rec-item.r-best { border-color: var(--yellow); background: color-mix(in srgb, var(--yellow) 6%, var(--bg)); }
+    .rec-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .rec-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .rec-detail { font-size: 11px; color: var(--muted); line-height: 1.55; }
+
+    /* ── Pump shifts ────────────────────────────── */
+    .shifts-list { display: flex; flex-direction: column; gap: 6px; }
+    .shift-row {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 5px; padding: 5px 8px;
+    }
+    .shift-label { font-size: 10px; color: var(--muted); font-weight: 600; min-width: 44px; }
+    .shift-select {
+      flex: 1; padding: 4px 6px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text); font-size: 12px; font-family: var(--font);
+      outline: none; cursor: pointer;
+    }
+    .shift-select:focus { border-color: var(--accent); }
+    .shift-sep { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+    .shift-hrs { font-size: 10px; color: var(--accent); min-width: 30px; text-align: right; flex-shrink: 0; font-family: var(--font); }
+    .shift-remove {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;
+      transition: color .15s; flex-shrink: 0;
+    }
+    .shift-remove:hover { color: var(--red); }
+    .shift-overnight { font-size: 9px; color: var(--orange); flex-shrink: 0; }
+    .add-shift-btn {
+      display: flex; align-items: center; gap: 5px;
+      width: 100%; padding: 6px 10px; margin-top: 4px;
+      background: transparent; border: 1px dashed var(--border); border-radius: 5px;
+      color: var(--muted); font-size: 12px; cursor: pointer; font-family: inherit;
+      transition: border-color .15s, color .15s;
+    }
+    .add-shift-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .pump-total { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .pump-total span { color: var(--accent); font-weight: 700; }
+
+    /* ── Charts ─────────────────────────────────── */
+    .charts-section {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .chart-wrap {
+      padding: 16px 18px 14px; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .chart-wrap:last-child { border-right: none; }
+    .chart-title-row {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    }
+    .chart-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--muted);
+    }
+    .chart-legend { display: flex; gap: 14px; flex-wrap: wrap; }
+    .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+    .leg-swatch { width: 22px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+    .leg-swatch.dashed { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 8px); }
+    canvas.chart-canvas { width: 100%; border-radius: 4px; display: block; }
+
+    @media (max-width: 640px) { .charts-section { grid-template-columns: 1fr; } .chart-wrap { border-right: none; border-bottom: 1px solid var(--border); } }
+
+    /* ── Responsive ─────────────────────────────── */
+    @media (max-width: 640px) {
+      .tool-body { flex-direction: column; }
+      .input-panel {
+        width: 100%; min-width: 0;
+        border-right: none; border-bottom: 1px solid var(--border);
+        max-height: 45vh; overflow-y: auto;
+      }
+      .tool-header { padding: 0 12px; }
+      .tool-title-group h1 { font-size: 13px; }
+      .print-btn { display: none; }
+      .sheet-section, .rec-section { padding: 12px; }
+    }
+
+    /* ── Print ──────────────────────────────────── */
+    .print-header    { display: none; }
+    .print-page2-hdr { display: none; }
+
+    @media print {
+      @page {
+        size: A4 portrait; margin: 12mm 15mm 18mm 15mm;
+        @bottom-center {
+          content: "Reservoir Sizing Spreadsheet by Er. Sanjog Shakya";
+          font-size: 7pt; color: #888;
+          border-top: 0.5pt solid #ccc; padding-top: 4pt;
+        }
+      }
+      @page :first { size: A4 landscape; margin: 10mm 18mm 18mm 18mm; }
+
+      *, *::before, *::after { box-sizing: border-box !important; }
+
+      body {
+        background: #fff !important; color: #111 !important; font-size: 9pt !important;
+        -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+        font-family: "Segoe UI", Arial, sans-serif !important;
+      }
+
+      /* ── Hide screen-only elements ── */
+      .tool-header, .sys-tabs, .input-panel { display: none !important; }
+
+      /* ── Print report header ── */
+      .print-header {
+        display: block !important;
+        padding-bottom: 8px; margin-bottom: 10px;
+        border-bottom: 2px solid #1a5cba;
+      }
+      .ph-logo {
+        display: flex; align-items: center; gap: 6px;
+        color: #1a5cba; font-size: 7.5pt; font-weight: 700; margin-bottom: 4px;
+      }
+      .ph-std { color: #888; font-weight: 400; }
+      .ph-project-name { font-size: 15pt; font-weight: 700; color: #111; margin: 3px 0 4px; }
+      .ph-meta-row { display: flex; gap: 0; font-size: 8pt; color: #555; }
+      .ph-meta-row span { margin-right: 4px; }
+      .ph-meta-row span + span::before { content: '·'; margin-right: 4px; color: #bbb; }
+
+      /* ── Layout ── */
+      .tool-body { display: block !important; }
+      .main-area { overflow: visible !important; display: block !important; }
+
+      /* ── Results strip ── */
+      .results-strip {
+        display: grid !important; grid-template-columns: repeat(6, 1fr) !important;
+        border: 1px solid #bbb !important; border-radius: 4px !important;
+        background: #f5f5f5 !important; margin-bottom: 6px !important;
+        page-break-inside: avoid !important; break-inside: avoid !important;
+      }
+      .result-card {
+        background: transparent !important; border: none !important;
+        border-right: 1px solid #ccc !important; padding: 7px 10px !important;
+      }
+      .result-card:last-child { border-right: none !important; }
+      .result-card.highlight { background: #eef3ff !important; border-top: 2px solid #1a5cba !important; }
+      .rc-label { color: #555 !important; font-size: 6.5pt !important; }
+      .rc-value { color: #1a3090 !important; font-size: 12pt !important; font-family: Arial, sans-serif !important; }
+      .result-card.highlight .rc-value { font-size: 14pt !important; }
+      .rc-sub { color: #777 !important; font-size: 6.5pt !important; }
+
+      /* ── BS Callout ── */
+      .bs-callout {
+        display: flex !important; flex-wrap: wrap !important;
+        border: 1px solid #bbb !important; border-radius: 4px !important;
+        background: #f5f5f5 !important; margin-bottom: 6px !important;
+        page-break-inside: avoid !important; break-inside: avoid !important;
+      }
+      .bs-item { border-right: 1px solid #ddd !important; padding: 5px 10px !important; background: transparent !important; }
+      .bs-lbl { color: #555 !important; font-size: 6.5pt !important; }
+      .bs-val { font-size: 10pt !important; font-family: Arial, sans-serif !important; }
+      .bs-val.pos { color: #0a6e2d !important; }
+      .bs-val.neg { color: #b71c1c !important; }
+      .bs-val.acc { color: #1a3090 !important; }
+
+      /* ── Charts (dark canvas prints as-is with print-color-adjust) ── */
+      .charts-section {
+        display: grid !important; grid-template-columns: 1fr 1fr !important;
+        border: 1px solid #bbb !important; border-radius: 4px !important;
+        overflow: hidden !important; margin-bottom: 6px !important;
+        page-break-inside: avoid !important; break-inside: avoid !important;
+      }
+      .chart-wrap {
+        padding: 6px 8px 4px !important; border-right: 1px solid #333 !important;
+        background: #0d1117 !important;
+      }
+      .chart-wrap:last-child { border-right: none !important; }
+      .chart-title { color: #8b949e !important; font-size: 7pt !important; }
+      .chart-title-row { margin-bottom: 3px !important; }
+      .chart-legend { gap: 10px !important; }
+      .leg-item { color: #8b949e !important; font-size: 7pt !important; }
+      canvas.chart-canvas { width: 100% !important; height: auto !important; display: block !important; }
+
+      /* ── Page 2 mini-header ── */
+      .print-page2-hdr {
+        display: flex !important; justify-content: space-between; align-items: baseline;
+        border-bottom: 2px solid #1a5cba; padding-bottom: 5px; margin-bottom: 8px;
+        font-size: 8pt; color: #555; font-style: italic;
+      }
+      .print-page2-hdr span:first-child { color: #1a5cba; font-weight: 600; font-style: normal; }
+
+      /* ── Spreadsheet — page 2 ── */
+      .sheet-section {
+        page-break-before: always !important; break-before: always !important;
+        padding: 0 !important; margin-bottom: 8px !important;
+      }
+      .sheet-hdr { margin-bottom: 6px !important; }
+      .sheet-title { color: #333 !important; font-size: 8pt !important; }
+      .sheet-note { font-size: 7pt !important; color: #555 !important; }
+      .sheet-note .max-lbl { color: #0a6e2d !important; }
+      .sheet-note .min-lbl { color: #b71c1c !important; }
+      .sheet-wrap { overflow: visible !important; border: 1px solid #bbb !important; border-radius: 3px !important; }
+      .design-sheet { min-width: 0 !important; width: 100% !important; font-size: 7pt !important; font-family: Arial, sans-serif !important; }
+      .design-sheet thead { background: #eeeeee !important; }
+      .design-sheet thead tr:first-child { border-bottom: 1px solid #bbb !important; }
+      .design-sheet thead tr:last-child { border-bottom: 2px solid #999 !important; }
+      .design-sheet th { color: #333 !important; border-color: #bbb !important; font-size: 6.5pt !important; padding: 4px 5px !important; }
+      .design-sheet td { color: #111 !important; border-color: #ddd !important; padding: 3px 5px !important; font-size: 7pt !important; font-family: Arial, sans-serif !important; }
+      .design-sheet tbody tr:hover { background: transparent !important; }
+      .design-sheet tfoot { background: #eeeeee !important; border-top: 2px solid #999 !important; }
+      .design-sheet tfoot td { color: #111 !important; border-color: #bbb !important; font-size: 7pt !important; font-weight: 700 !important; }
+      .td-sn, .td-time { color: #666 !important; }
+      .td-factor { color: #888 !important; font-size: 6.5pt !important; }
+      .td-pos { color: #0a6e2d !important; font-weight: 700 !important; }
+      .td-neg { color: #b71c1c !important; font-weight: 700 !important; }
+      .td-zer { color: #888 !important; }
+      .row-max { background: #e6f4ea !important; }
+      .row-min { background: #fce8e6 !important; }
+      .pct-input {
+        background: transparent !important; border: 1px solid #b0c4b0 !important;
+        color: #0a6e2d !important; font-size: 7pt !important;
+        width: 36px !important; padding: 1px 2px !important; text-align: center !important;
+      }
+
+      /* ── Recommendations ── */
+      .rec-section { padding: 0 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .rec-box { border: 1px solid #bbb !important; border-radius: 4px !important; overflow: hidden !important; }
+      .rec-hdr { background: #eeeeee !important; border-bottom: 1px solid #bbb !important; padding: 8px 12px !important; }
+      .rec-hdr h3 { color: #222 !important; font-size: 10pt !important; }
+      .rec-grid { padding: 8px !important; grid-template-columns: repeat(2, 1fr) !important; display: grid !important; gap: 6px !important; }
+      .rec-item { page-break-inside: avoid !important; break-inside: avoid !important; padding: 7px 9px !important; }
+      .rec-item.r-good { border-color: #27ae60 !important; background: #f0faf5 !important; }
+      .rec-item.r-warn { border-color: #e67e22 !important; background: #fdf5ee !important; }
+      .rec-item.r-info { border-color: #2980b9 !important; background: #eef5fd !important; }
+      .rec-item.r-best { border-color: #f5a623 !important; background: #fdf9ed !important; }
+      .rec-title { color: #111 !important; font-size: 9pt !important; }
+      .rec-detail { color: #444 !important; font-size: 7.5pt !important; line-height: 1.4 !important; }
+      .rec-icon { font-size: 11pt !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="tool-header">
+  <div class="tool-title-group">
+    <h1>Reservoir Sizing Calculator</h1>
+    <span class="tool-subtitle">Gravity &amp; Pumping Water Supply ··· DWSS Nepal Standard</span>
+  </div>
+  <button class="print-btn" onclick="printDesign()">🖨 Print / Export</button>
+</header>
+
+<!-- System tabs -->
+<div class="sys-tabs">
+  <button class="sys-tab active" data-sys="gravity" id="tab-gravity" onclick="setSystem('gravity')">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 002 6c0 4.314 6 10 6 10zm0-7a3 3 0 110-6 3 3 0 010 6z"/></svg>
+    Gravity Fed System
+  </button>
+  <button class="sys-tab" data-sys="pumping" id="tab-pumping" onclick="setSystem('pumping')">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M6 1a1 1 0 00-1 1v1H2a1 1 0 000 2h.5v9a1 1 0 001 1h9a1 1 0 001-1V5H14a1 1 0 000-2h-3V2a1 1 0 00-1-1H6zm1 3h2v1H7V4zm2 3v6H7V7h2z"/></svg>
+    Pumping System
+  </button>
+</div>
+
+<!-- Print-only report header -->
+<div class="print-header">
+  <div class="ph-logo">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 002 6c0 4.314 6 10 6 10zm0-7a3 3 0 110-6 3 3 0 010 6z"/></svg>
+    <span>Reservoir Sizing Calculator</span>
+    <span class="ph-std">— DWSS Nepal Standard</span>
+  </div>
+  <div class="ph-project-name" id="ph-project-name">Project</div>
+  <div class="ph-meta-row">
+    <span id="ph-system-type"></span>
+    <span id="ph-pattern-lbl"></span>
+    <span id="ph-date-lbl"></span>
+  </div>
+</div>
+
+<div class="tool-body">
+
+  <!-- ── Input Panel ── -->
+  <div class="input-panel">
+
+    <div class="panel-section">
+      <h3>Project</h3>
+      <div class="input-row">
+        <label class="input-label">Project Name</label>
+        <input type="text" class="tool-input" id="project-name" placeholder="e.g. Sankhuwasabha WSP" />
+      </div>
+      <div class="input-row">
+        <label class="input-label">Consumption Pattern</label>
+        <select class="tool-select" id="region-select" onchange="applyPattern()">
+          <option value="Hill">Hill  ··· DWSS Nepal</option>
+          <option value="Terai">Terai ··· DWSS Nepal</option>
+          <option value="Custom">Custom (edit table directly)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>Demand &amp; Inflow</h3>
+      <div class="input-row">
+        <label class="input-label">Total Daily Demand (TDD)</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="tdd-val" value="100" min="0.001" step="0.1" oninput="calculate()" />
+          <select class="unit-select" id="tdd-unit" onchange="calculate()">
+            <option value="m3">m³/day</option>
+            <option value="L">L/day</option>
+          </select>
+        </div>
+      </div>
+      <div class="input-row" id="row-inflow">
+        <label class="input-label">Source / Inflow Discharge (Q)</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="q-val" value="1.2" min="0" step="0.001" oninput="calculate()" />
+          <select class="unit-select" id="q-unit" onchange="calculate()">
+            <option value="ls">L/s</option>
+            <option value="lhr">L/hr</option>
+            <option value="m3hr">m³/hr</option>
+            <option value="m3day">m³/day</option>
+          </select>
+        </div>
+        <p class="hint-text" id="inflow-check"></p>
+      </div>
+    </div>
+
+    <div class="panel-section" id="pump-section" style="display:none;">
+      <h3>Pump Shifts</h3>
+      <div class="shifts-list" id="shifts-list"></div>
+      <button class="add-shift-btn" onclick="addShift()">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/></svg>
+        Add Shift
+      </button>
+      <p class="pump-total">Total pumping: <span id="pump-total-hrs">0</span> hr/day</p>
+    </div>
+
+    <div class="panel-section">
+      <h3>Additional Storage</h3>
+      <div class="input-row">
+        <label class="input-label">Dead Storage</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="dead-pct" value="10" min="0" max="50" step="1" oninput="calculate()" />
+          <span class="unit-badge">% of Bal.</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Fire Storage</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="fire-val" value="0" min="0" step="0.1" oninput="calculate()" />
+          <select class="unit-select" id="fire-unit" onchange="calculate()">
+            <option value="m3">m³</option>
+            <option value="L">L</option>
+          </select>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Emergency Storage</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="emer-pct" value="25" min="0" max="100" step="1" oninput="calculate()" />
+          <span class="unit-badge">% of TDD</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /input-panel -->
+
+  <!-- ── Main area ── -->
+  <div class="main-area">
+
+    <!-- Results strip -->
+    <div class="results-strip">
+      <div class="result-card">
+        <div class="rc-label">Total Daily Demand</div>
+        <div class="rc-value" id="r-tdd">···</div>
+        <div class="rc-sub" id="r-tdd-sub">···</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label" id="r-inflow-lbl">Inflow Rate</div>
+        <div class="rc-value" id="r-inflow">···</div>
+        <div class="rc-sub" id="r-inflow-sub">···</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label">Balancing Storage</div>
+        <div class="rc-value" id="r-bal">···</div>
+        <div class="rc-sub" id="r-bal-sub">···</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label">Dead Storage</div>
+        <div class="rc-value" id="r-dead">···</div>
+        <div class="rc-sub" id="r-dead-sub">···</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label">Fire + Emergency</div>
+        <div class="rc-value" id="r-misc">···</div>
+        <div class="rc-sub" id="r-misc-sub">···</div>
+      </div>
+      <div class="result-card highlight">
+        <div class="rc-label">Total Reservoir Capacity</div>
+        <div class="rc-value" id="r-total">···</div>
+        <div class="rc-sub" id="r-total-sub">···</div>
+      </div>
+    </div>
+
+    <!-- Balancing storage callout -->
+    <div class="bs-callout">
+      <div class="bs-item">
+        <span class="bs-lbl">Max. Surplus</span>
+        <span class="bs-val pos" id="bs-max">···</span>
+      </div>
+      <div class="bs-item">
+        <span class="bs-lbl">Max. Deficit</span>
+        <span class="bs-val neg" id="bs-min">···</span>
+      </div>
+      <div class="bs-item">
+        <span class="bs-lbl">Balancing Storage = Max − Min</span>
+        <span class="bs-val acc" id="bs-diff">···</span>
+      </div>
+      <div class="bs-item">
+        <span class="bs-lbl">Peak Demand Hour</span>
+        <span class="bs-val acc" id="bs-peak">···</span>
+      </div>
+      <div class="bs-item">
+        <span class="bs-lbl">Peak Hourly Demand</span>
+        <span class="bs-val acc" id="bs-peak-val">···</span>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-section">
+      <div class="chart-wrap">
+        <div class="chart-title-row">
+          <span class="chart-title">Mass Curve — Cumulative Supply vs Demand</span>
+          <div class="chart-legend">
+            <span class="leg-item"><span class="leg-swatch" style="background:#58a6ff"></span>Cumulative Supply</span>
+            <span class="leg-item"><span class="leg-swatch" style="background:#e74c3c"></span>Cumulative Demand</span>
+          </div>
+        </div>
+        <canvas id="chart-mass" class="chart-canvas"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title-row">
+          <span class="chart-title">Hourly Distribution — Supply vs Demand</span>
+          <div class="chart-legend">
+            <span class="leg-item"><span class="leg-swatch" style="background:#58a6ff"></span>Hourly Supply</span>
+            <span class="leg-item"><span class="leg-swatch" style="background:#e67e22"></span>Hourly Demand</span>
+          </div>
+        </div>
+        <canvas id="chart-hourly" class="chart-canvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Spreadsheet -->
+    <div class="sheet-section">
+      <div class="print-page2-hdr">
+        <span>Hourly Mass Curve Analysis  ·  <span id="ph2-project"></span></span>
+        <span id="ph2-system"></span>
+      </div>
+      <div class="sheet-hdr">
+        <span class="sheet-title">Hourly Distribution &amp; Mass Curve Analysis</span>
+        <span class="sheet-note">
+          <b>Green</b> = editable &nbsp;·&nbsp;
+          <span class="max-lbl">■ Max balance row</span> &nbsp;·&nbsp;
+          <span class="min-lbl">■ Min balance row</span>
+        </span>
+      </div>
+      <div class="sheet-wrap">
+        <table class="design-sheet">
+          <thead>
+            <tr>
+              <th rowspan="2">S.N.</th>
+              <th rowspan="2">Hour</th>
+              <th rowspan="2" class="th-edit">Consump.<br>%</th>
+              <th rowspan="2">Factor<br><span style="font-weight:400;font-size:9px;">(% × 0.24)</span></th>
+              <th colspan="2" style="border-bottom:1px solid var(--border);">Demand</th>
+              <th colspan="2" style="border-bottom:1px solid var(--border);">Supply</th>
+              <th rowspan="2">Difference<br>(L)</th>
+              <th rowspan="2">Surplus / Deficit<br>(L)</th>
+            </tr>
+            <tr>
+              <th>Hourly (L)</th>
+              <th>Cumulative (L)</th>
+              <th>Hourly (L)</th>
+              <th>Cumulative (L)</th>
+            </tr>
+          </thead>
+          <tbody id="sheet-body"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="text-align:left; font-size:11px;">TOTAL / CHECK</td>
+              <td id="ft-pct" style="text-align:right;">···</td>
+              <td style="text-align:right; color:var(--muted);">24.00</td>
+              <td id="ft-demand" style="text-align:right;">···</td>
+              <td style="color:var(--muted);">···</td>
+              <td id="ft-supply" style="text-align:right;">···</td>
+              <td style="color:var(--muted);">···</td>
+              <td style="color:var(--muted);">···</td>
+              <td style="color:var(--muted);">···</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="rec-section">
+      <div class="rec-box">
+        <div class="rec-hdr">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="#f5a623"><path d="M8 15A7 7 0 118 1a7 7 0 010 14zm0 1A8 8 0 108 0a8 8 0 000 16z"/><path d="M7.002 11a1 1 0 112 0 1 1 0 01-2 0zM7.1 4.995a.905.905 0 111.8 0l-.35 3.507a.552.552 0 01-1.1 0L7.1 4.995z"/></svg>
+          <h3>Design Recommendations &amp; Optimum Sizing</h3>
+        </div>
+        <div class="rec-grid" id="rec-grid">
+          <div class="rec-item r-info">
+            <span class="rec-icon">ℹ️</span>
+            <div>
+              <div class="rec-title">Enter project inputs to generate recommendations</div>
+              <div class="rec-detail">Provide TDD and inflow discharge above. Results update in real time.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-area -->
+</div><!-- /tool-body -->
+
+<script>
+// ── Consumption patterns (DWSS Nepal) ──────────────────────────────────────
+const PATTERNS = {
+  Hill:  [1.5, 1.5, 1.5, 1.5, 1.5, 12.5, 12.5, 6, 6, 6, 6, 6, 3, 3, 3, 3, 3, 7.5, 7.5, 1.5, 1.5, 1.5, 1.5, 1.5],
+  Terai: [1.5, 1.5, 1.5, 1.5, 1.5, 10,   10,   7, 7, 7, 7, 7, 3, 3, 3, 3, 3, 10,  10,  1.5, 1.5, 1.5, 1.5, 1.5],
+};
+
+// Standard commercial tank sizes in m³
+const STANDARD_SIZES = [5,6,8,9,10,12,15,20,25,35,50,75,100,125,150,200,250,300,400,500,750,1000,2000,5000,10000];
+
+let currentSystem = 'gravity';
+const pad = n => String(n).padStart(2, '0');
+const fmt = (v, d = 0) => v.toLocaleString('en-IN', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtM3 = v => (v / 1000).toFixed(2) + ' m³';
+
+// ── Theme-aware CSS variable helper ──────────────────────────────────────
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// ── Chart helpers ────────────────────────────────────────────────────────
+function niceStep(range, steps) {
+  const rough = range / steps;
+  const exp   = Math.floor(Math.log10(rough));
+  const pow   = Math.pow(10, exp);
+  const f     = rough / pow;
+  const nice  = f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10;
+  return nice * pow;
+}
+
+function fmtAxis(v) {
+  if (v === 0) return '0';
+  if (v >= 1e6)  return (v / 1e6).toFixed(1)  + ' ML';
+  if (v >= 1000) return (v / 1000).toFixed(1) + ' m³';
+  return v.toFixed(0) + ' L';
+}
+
+function setupCanvas(id, h) {
+  const el  = document.getElementById(id);
+  if (!el) return null;
+  const dpr = window.devicePixelRatio || 1;
+  const w   = el.parentElement.clientWidth - 36; // account for wrap padding
+  el.width  = w  * dpr;
+  el.height = h  * dpr;
+  el.style.width  = w  + 'px';
+  el.style.height = h  + 'px';
+  const ctx = el.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, W: w, H: h };
+}
+
+// ── Mass curve chart ──────────────────────────────────────────────────────
+function drawMassCurve(rows, maxSurplusIdx, maxDeficitIdx) {
+  const C = setupCanvas('chart-mass', 300);
+  if (!C) return;
+  const { ctx, W, H } = C;
+  const pad = { t: 22, r: 22, b: 48, l: 78 };
+  const cW  = W - pad.l - pad.r;
+  const cH  = H - pad.t - pad.b;
+
+  // Background
+  ctx.fillStyle = cssVar('--bg-color') || '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  // Build 25-point dataset (hour 0 = 0,0 then 1..24)
+  const pts = [{ h: 0, d: 0, s: 0 }];
+  rows.forEach((r, i) => pts.push({ h: i + 1, d: r.cumD, s: r.cumS }));
+
+  const maxVal = Math.max(...pts.map(p => Math.max(p.d, p.s)));
+  const step   = niceStep(maxVal, 5);
+  const yMax   = Math.ceil(maxVal / step) * step;
+
+  const xS = h => pad.l + (h / 24) * cW;
+  const yS = v => pad.t + cH - Math.min(1, v / yMax) * cH;
+
+  const cBorder = cssVar('--border-color') || '#30363d';
+  const cMuted  = cssVar('--sub-color')    || '#8b949e';
+
+  // ── Y grid + labels ────────────────────────────────────────────────────
+  for (let v = 0; v <= yMax + step * 0.01; v += step) {
+    const y = yS(v);
+    ctx.strokeStyle = cBorder; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cW, y); ctx.stroke();
+    ctx.fillStyle = cMuted; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(fmtAxis(v), pad.l - 7, y + 3.5);
+  }
+
+  // ── X grid + labels ────────────────────────────────────────────────────
+  for (let h = 0; h <= 24; h += 2) {
+    const x = xS(h);
+    ctx.strokeStyle = cBorder; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + cH); ctx.stroke();
+    ctx.fillStyle = cMuted; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(pad2(h) + ':00', x, pad.t + cH + 14);
+  }
+
+  // ── Axes ──────────────────────────────────────────────────────────────
+  ctx.strokeStyle = cBorder; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + cH);
+  ctx.lineTo(pad.l + cW, pad.t + cH); ctx.stroke();
+
+  const cAccent = cssVar('--main-color')  || '#58a6ff';
+  const cRed    = cssVar('--error-color') || '#e74c3c';
+
+  // ── Filled area between curves (segment by segment) ───────────────────
+  for (let i = 0; i < pts.length - 1; i++) {
+    const x0 = xS(pts[i].h),     x1 = xS(pts[i+1].h);
+    const d0 = yS(pts[i].d),     d1 = yS(pts[i+1].d);
+    const s0 = yS(pts[i].s),     s1 = yS(pts[i+1].s);
+    const surplus = (pts[i].s + pts[i+1].s) >= (pts[i].d + pts[i+1].d);
+    ctx.beginPath();
+    ctx.moveTo(x0, d0); ctx.lineTo(x1, d1);
+    ctx.lineTo(x1, s1); ctx.lineTo(x0, s0); ctx.closePath();
+    ctx.fillStyle = surplus ? 'rgba(88,166,255,0.10)' : 'rgba(231,76,60,0.12)';
+    ctx.fill();
+  }
+
+  // ── Supply curve ──────────────────────────────────────────────────────
+  ctx.beginPath();
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(xS(p.h), yS(p.s)) : ctx.lineTo(xS(p.h), yS(p.s)));
+  ctx.strokeStyle = cAccent; ctx.lineWidth = 2; ctx.stroke();
+
+  // ── Demand curve ──────────────────────────────────────────────────────
+  ctx.beginPath();
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(xS(p.h), yS(p.d)) : ctx.lineTo(xS(p.h), yS(p.d)));
+  ctx.strokeStyle = cRed; ctx.lineWidth = 2; ctx.stroke();
+
+  const cGreen = cssVar('--green') || '#2ecc71';
+
+  // ── Max surplus marker (green dot + label) ────────────────────────────
+  if (maxSurplusIdx >= 0) {
+    const p   = pts[maxSurplusIdx + 1];
+    const mx  = xS(p.h), myd = yS(p.d), mys = yS(p.s);
+    // vertical bracket
+    ctx.strokeStyle = cGreen; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(mx, myd); ctx.lineTo(mx, mys); ctx.stroke();
+    ctx.setLineDash([]);
+    // dots
+    [myd, mys].forEach(y => { ctx.beginPath(); ctx.arc(mx, y, 4, 0, Math.PI*2); ctx.fillStyle = cGreen; ctx.fill(); });
+    ctx.fillStyle = cGreen; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('Max Surplus', mx + 6, (myd + mys) / 2 + 3);
+  }
+
+  // ── Max deficit marker (red dot + label) ─────────────────────────────
+  if (maxDeficitIdx >= 0) {
+    const p   = pts[maxDeficitIdx + 1];
+    const mx  = xS(p.h), myd = yS(p.d), mys = yS(p.s);
+    ctx.strokeStyle = cRed; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(mx, myd); ctx.lineTo(mx, mys); ctx.stroke();
+    ctx.setLineDash([]);
+    [myd, mys].forEach(y => { ctx.beginPath(); ctx.arc(mx, y, 4, 0, Math.PI*2); ctx.fillStyle = cRed; ctx.fill(); });
+    ctx.fillStyle = cRed; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('Max Deficit', mx + 6, (myd + mys) / 2 + 3);
+  }
+
+  // ── Y-axis label ──────────────────────────────────────────────────────
+  ctx.save();
+  ctx.translate(13, pad.t + cH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = cMuted; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Cumulative Volume', 0, 0);
+  ctx.restore();
+
+  // ── X-axis label ──────────────────────────────────────────────────────
+  ctx.fillStyle = cMuted; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Time (hrs)', pad.l + cW / 2, H - 4);
+}
+
+// ── Hourly distribution chart ─────────────────────────────────────────────
+function drawHourlyChart(rows) {
+  const C = setupCanvas('chart-hourly', 300);
+  if (!C) return;
+  const { ctx, W, H } = C;
+  const pad = { t: 22, r: 22, b: 48, l: 78 };
+  const cW  = W - pad.l - pad.r;
+  const cH  = H - pad.t - pad.b;
+
+  ctx.fillStyle = cssVar('--bg-color') || '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  const maxVal = Math.max(...rows.map(r => Math.max(r.hDemand, r.hSupply)));
+  const step   = niceStep(maxVal, 5);
+  const yMax   = Math.ceil(maxVal / step) * step;
+
+  const barW   = cW / 24;
+  const xS     = h => pad.l + h * barW;
+  const yS     = v => pad.t + cH - Math.min(1, v / yMax) * cH;
+  const barH   = v => Math.min(1, v / yMax) * cH;
+
+  const cBorder2 = cssVar('--border-color') || '#30363d';
+  const cMuted2  = cssVar('--sub-color')    || '#8b949e';
+
+  // ── Y grid + labels ────────────────────────────────────────────────────
+  for (let v = 0; v <= yMax + step * 0.01; v += step) {
+    const y = yS(v);
+    ctx.strokeStyle = cBorder2; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cW, y); ctx.stroke();
+    ctx.fillStyle = cMuted2; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(fmtAxis(v), pad.l - 7, y + 3.5);
+  }
+
+  // ── X labels (every 4 hours) ──────────────────────────────────────────
+  for (let h = 0; h <= 24; h += 4) {
+    const x = pad.l + h * barW;
+    ctx.strokeStyle = cBorder2; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + cH); ctx.stroke();
+    ctx.fillStyle = cMuted2; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(pad2(h) + ':00', x, pad.t + cH + 14);
+  }
+
+  // ── Axes ──────────────────────────────────────────────────────────────
+  ctx.strokeStyle = cBorder2; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + cH);
+  ctx.lineTo(pad.l + cW, pad.t + cH); ctx.stroke();
+
+  const cAccent2 = cssVar('--main-color') || '#58a6ff';
+  const cOrange2 = cssVar('--orange')     || '#e67e22';
+
+  // ── Bars ──────────────────────────────────────────────────────────────
+  const bw = barW * 0.38;
+  rows.forEach((r, h) => {
+    const x = xS(h);
+    // Supply bar
+    ctx.fillStyle = cAccent2 + 'bf'; // ~75% opacity
+    ctx.fillRect(x + barW * 0.04, yS(r.hSupply), bw, barH(r.hSupply));
+    // Demand bar
+    ctx.fillStyle = cOrange2 + 'bf';
+    ctx.fillRect(x + barW * 0.04 + bw + barW * 0.04, yS(r.hDemand), bw, barH(r.hDemand));
+  });
+
+  // ── Supply line (avg supply) ──────────────────────────────────────────
+  const totalSupply = rows.reduce((a, r) => a + r.hSupply, 0);
+  const avgSupply   = totalSupply / 24;
+  if (avgSupply > 0) {
+    ctx.strokeStyle = cAccent2 + '80'; ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, yS(avgSupply)); ctx.lineTo(pad.l + cW, yS(avgSupply));
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // ── Y-axis label ──────────────────────────────────────────────────────
+  ctx.save();
+  ctx.translate(13, pad.t + cH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = cMuted2; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Hourly Volume', 0, 0);
+  ctx.restore();
+
+  ctx.fillStyle = cMuted2; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Time (hrs)', pad.l + cW / 2, H - 4);
+}
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+// ── Shift management ─────────────────────────────────────────────────────
+let shiftCount = 0;
+
+function buildStartOpts(sel) {
+  return Array.from({length: 24}, (_, h) =>
+    `<option value="${h}"${h === sel ? ' selected' : ''}>${pad(h)}:00</option>`).join('');
+}
+function buildEndOpts(sel) {
+  return Array.from({length: 24}, (_, i) => {
+    const h = i + 1;
+    const label = h === 24 ? '24:00' : `${pad(h)}:00`;
+    return `<option value="${h}"${h === sel ? ' selected' : ''}>${label}</option>`;
+  }).join('');
+}
+
+function addShift(startH = 6, endH = 14) {
+  shiftCount++;
+  const id = 'shift-' + shiftCount;
+  const row = document.createElement('div');
+  row.className = 'shift-row';
+  row.id = id;
+  row.innerHTML =
+    `<span class="shift-label">Shift ${shiftCount}</span>` +
+    `<select class="shift-select shift-start" onchange="updateShift('${id}')">${buildStartOpts(startH)}</select>` +
+    `<span class="shift-sep">→</span>` +
+    `<select class="shift-select shift-end" onchange="updateShift('${id}')">${buildEndOpts(endH)}</select>` +
+    `<span class="shift-overnight" id="${id}-ov"></span>` +
+    `<span class="shift-hrs" id="${id}-hrs"></span>` +
+    `<button class="shift-remove" onclick="removeShift('${id}')" title="Remove">✕</button>`;
+  document.getElementById('shifts-list').appendChild(row);
+  updateShift(id);
+  calculate();
+}
+
+function removeShift(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+  // Renumber labels
+  document.querySelectorAll('.shift-row').forEach((r, i) => {
+    const lbl = r.querySelector('.shift-label');
+    if (lbl) lbl.textContent = 'Shift ' + (i + 1);
+  });
+  calculate();
+}
+
+function updateShift(id) {
+  const row = document.getElementById(id);
+  if (!row) return;
+  const s = parseInt(row.querySelector('.shift-start').value);
+  const e = parseInt(row.querySelector('.shift-end').value);
+  const hrs = shiftHours(s, e);
+  row.querySelector('.shift-hrs').textContent = hrs + 'h';
+  const ov = row.querySelector(`#${id}-ov`);
+  ov.textContent = e <= s ? '↩ overnight' : '';
+  calculate();
+}
+
+function shiftHours(s, e) {
+  // e = 1..24. Hours active = s to e-1 (wrapping if e <= s)
+  if (e > s) return e - s;
+  return (24 - s) + e; // overnight
+}
+
+function getActiveHours() {
+  // Returns array[24] of boolean
+  const active = Array(24).fill(false);
+  document.querySelectorAll('.shift-row').forEach(row => {
+    const s = parseInt(row.querySelector('.shift-start').value);
+    const e = parseInt(row.querySelector('.shift-end').value);
+    if (e > s) {
+      for (let h = s; h < e; h++) active[h] = true;
+    } else { // overnight or e=24 (s..23 only)
+      for (let h = s; h < 24; h++) active[h] = true;
+      for (let h = 0; h < e;  h++) active[h] = true;
+    }
+  });
+  return active;
+}
+
+// ── Unit conversions ─────────────────────────────────────────────────────
+function getTDD() {
+  const v = parseFloat(document.getElementById('tdd-val').value) || 0;
+  return document.getElementById('tdd-unit').value === 'm3' ? v * 1000 : v; // → liters
+}
+
+function getQlph() { // → liters/hour
+  const v = parseFloat(document.getElementById('q-val').value) || 0;
+  const u = document.getElementById('q-unit').value;
+  if (u === 'ls')    return v * 3600;
+  if (u === 'lhr')   return v;
+  if (u === 'm3hr')  return v * 1000;
+  if (u === 'm3day') return v * 1000 / 24;
+  return v * 3600;
+}
+
+// ── System toggle ─────────────────────────────────────────────────────────
+function setSystem(sys) {
+  currentSystem = sys;
+  document.getElementById('tab-gravity').classList.toggle('active', sys === 'gravity');
+  document.getElementById('tab-pumping').classList.toggle('active', sys === 'pumping');
+  document.getElementById('pump-section').style.display  = sys === 'pumping' ? 'block' : 'none';
+  document.getElementById('row-inflow').style.display    = sys === 'gravity'  ? 'block' : 'none';
+  document.getElementById('r-inflow-lbl').textContent    = sys === 'gravity'  ? 'Inflow Rate' : 'Pump Config';
+  calculate();
+}
+
+// ── Pattern selector ─────────────────────────────────────────────────────
+function applyPattern() {
+  const region = document.getElementById('region-select').value;
+  if (region === 'Custom') { calculate(); return; }
+  const pat = PATTERNS[region];
+  for (let h = 0; h < 24; h++) {
+    const el = document.getElementById('pct-' + h);
+    if (el) el.value = pat[h];
+  }
+  calculate();
+}
+
+// ── Build table skeleton (called once) ───────────────────────────────────
+function buildTable() {
+  const pat = PATTERNS.Hill;
+  const tbody = document.getElementById('sheet-body');
+  tbody.innerHTML = '';
+  for (let h = 0; h < 24; h++) {
+    const tr = document.createElement('tr');
+    tr.id = 'tr-' + h;
+    tr.innerHTML =
+      `<td class="td-sn">${h + 1}</td>` +
+      `<td class="td-time">${pad(h)}:00–${pad((h+1)%24)}:00</td>` +
+      `<td class="td-edit"><input type="number" class="pct-input" id="pct-${h}" value="${pat[h]}" step="0.1" min="0" oninput="calculate()" /></td>` +
+      `<td class="td-factor" id="fac-${h}">···</td>` +
+      `<td class="td-calc" id="hd-${h}">···</td>` +
+      `<td class="td-calc" id="cd-${h}">···</td>` +
+      `<td class="td-calc" id="hs-${h}">···</td>` +
+      `<td class="td-calc" id="cs-${h}">···</td>` +
+      `<td id="df-${h}">···</td>` +
+      `<td id="rb-${h}">···</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+// ── Main calculation ──────────────────────────────────────────────────────
+function calculate() {
+  const tdd = getTDD();
+  if (tdd <= 0) return;
+
+  // Raw percentages from inputs
+  const rawPcts = [];
+  for (let h = 0; h < 24; h++) {
+    rawPcts.push(parseFloat(document.getElementById('pct-' + h)?.value) || 0);
+  }
+  const pctSum = rawPcts.reduce((a, b) => a + b, 0);
+  const normPcts = rawPcts.map(p => pctSum > 0 ? p * 100 / pctSum : 100 / 24);
+
+  // Hourly demands (using normalized %)
+  const hDemand = normPcts.map(p => tdd * p / 100);
+
+  // Hourly supply
+  let hSupply;
+  if (currentSystem === 'gravity') {
+    const qph = getQlph();
+    hSupply = Array(24).fill(qph);
+  } else {
+    const active = getActiveHours();
+    const totalPumpHrs = active.filter(Boolean).length || 1;
+    const pRate = tdd / totalPumpHrs;
+    hSupply = active.map(a => a ? pRate : 0);
+    document.getElementById('pump-total-hrs').textContent = totalPumpHrs;
+  }
+
+  // Cumulative & running balance
+  let cumD = 0, cumS = 0;
+  let maxNet = -Infinity, minNet = Infinity;
+  let maxIdx = 0, minIdx = 0;
+  let peakDemandIdx = 0;
+  const rows = [];
+
+  for (let h = 0; h < 24; h++) {
+    cumD += hDemand[h];
+    cumS += hSupply[h];
+    const diff = hSupply[h] - hDemand[h];
+    const net  = cumS - cumD;
+    if (net > maxNet) { maxNet = net; maxIdx = h; }
+    if (net < minNet) { minNet = net; minIdx = h; }
+    if (hDemand[h] > hDemand[peakDemandIdx]) peakDemandIdx = h;
+    rows.push({ hDemand: hDemand[h], hSupply: hSupply[h], cumD, cumS, diff, net });
+  }
+
+  const balancing = maxNet - minNet;
+
+  // Additional storages
+  const deadPct  = parseFloat(document.getElementById('dead-pct').value) || 0;
+  const dead     = balancing * deadPct / 100;
+  const fireRaw  = parseFloat(document.getElementById('fire-val').value) || 0;
+  const fire     = document.getElementById('fire-unit').value === 'm3' ? fireRaw * 1000 : fireRaw;
+  const emerPct  = parseFloat(document.getElementById('emer-pct').value) || 0;
+  const emergency = tdd * emerPct / 100;
+  const total    = balancing + dead + fire + emergency;
+
+  // ── Update result cards ───────────────────────────────────────────────
+  document.getElementById('r-tdd').textContent     = (tdd / 1000).toFixed(2) + ' m³';
+  document.getElementById('r-tdd-sub').textContent = fmt(tdd) + ' L/day';
+
+  if (currentSystem === 'gravity') {
+    const qph = getQlph();
+    const qls = qph / 3600;
+    document.getElementById('r-inflow').textContent     = qls.toFixed(3) + ' L/s';
+    document.getElementById('r-inflow-sub').textContent = (qph / 1000).toFixed(2) + ' m³/hr · ' + (qph * 24 / 1000).toFixed(1) + ' m³/day';
+    // Inflow check
+    const dailyInflow = qph * 24;
+    const diff = dailyInflow - tdd;
+    const pct = (diff / tdd * 100).toFixed(1);
+    const el = document.getElementById('inflow-check');
+    if (Math.abs(diff) < tdd * 0.02) {
+      el.innerHTML = `<span style="color:var(--green)">✓ Inflow matches TDD (within 2%)</span>`;
+    } else if (diff > 0) {
+      el.innerHTML = `<span style="color:#f5a623">⚠ Inflow surplus: +${(diff/1000).toFixed(1)} m³/day (+${pct}%)</span>`;
+    } else {
+      el.innerHTML = `<span style="color:var(--red)">✗ Inflow deficit: ${(diff/1000).toFixed(1)} m³/day (${pct}%) ··· reservoir will deplete</span>`;
+    }
+  } else {
+    const active = getActiveHours();
+    const ph = active.filter(Boolean).length || 1;
+    document.getElementById('r-inflow').textContent     = ph + ' hr/day';
+    document.getElementById('r-inflow-sub').textContent = 'Rate: ' + Math.round(tdd / ph / 1000) + ' m³/hr  ·  ' + document.querySelectorAll('.shift-row').length + ' shift(s)';
+  }
+
+  document.getElementById('r-bal').textContent      = (balancing / 1000).toFixed(2) + ' m³';
+  document.getElementById('r-bal-sub').textContent  = fmt(balancing) + ' L  (' + (balancing / tdd * 100).toFixed(1) + '% TDD)';
+  document.getElementById('r-dead').textContent     = (dead / 1000).toFixed(2) + ' m³';
+  document.getElementById('r-dead-sub').textContent = fmt(dead) + ' L';
+  document.getElementById('r-misc').textContent     = ((fire + emergency) / 1000).toFixed(2) + ' m³';
+  document.getElementById('r-misc-sub').textContent = 'Fire ' + (fire/1000).toFixed(1) + ' + Emer ' + (emergency/1000).toFixed(1) + ' m³';
+  document.getElementById('r-total').textContent    = (total / 1000).toFixed(2) + ' m³';
+  document.getElementById('r-total-sub').textContent = fmt(total) + ' Litres';
+
+  // Callout
+  document.getElementById('bs-max').textContent  = '+' + fmt(maxNet) + ' L  (' + (maxNet/1000).toFixed(2) + ' m³)';
+  document.getElementById('bs-min').textContent  = fmt(minNet) + ' L  (' + (minNet/1000).toFixed(2) + ' m³)';
+  document.getElementById('bs-diff').textContent = fmt(balancing) + ' L  (' + (balancing/1000).toFixed(2) + ' m³)';
+  document.getElementById('bs-peak').textContent = pad(peakDemandIdx) + ':00–' + pad((peakDemandIdx+1)%24) + ':00';
+  document.getElementById('bs-peak-val').textContent = fmt(hDemand[peakDemandIdx]) + ' L  (factor ' + (rawPcts[peakDemandIdx] * 0.24).toFixed(2) + ')';
+
+  // ── Update table cells (no re-render, preserves focus) ───────────────
+  let totalDemand = 0, totalSupply = 0;
+  rows.forEach((row, h) => {
+    const tr = document.getElementById('tr-' + h);
+    tr.className = '';
+    if (h === maxIdx) tr.className = 'row-max';
+    if (h === minIdx) tr.className = 'row-min';
+
+    const factor = (rawPcts[h] * 0.24).toFixed(2);
+    document.getElementById('fac-' + h).textContent = factor;
+    document.getElementById('hd-'  + h).textContent = fmt(row.hDemand);
+    document.getElementById('cd-'  + h).textContent = fmt(row.cumD);
+    document.getElementById('hs-'  + h).textContent = fmt(row.hSupply);
+    document.getElementById('cs-'  + h).textContent = fmt(row.cumS);
+
+    const dfEl = document.getElementById('df-' + h);
+    dfEl.textContent = (row.diff >= 0 ? '+' : '') + fmt(row.diff);
+    dfEl.className = row.diff > 0.5 ? 'td-pos' : row.diff < -0.5 ? 'td-neg' : 'td-zer';
+
+    const rbEl = document.getElementById('rb-' + h);
+    rbEl.textContent = (row.net >= 0 ? '+' : '') + fmt(row.net);
+    rbEl.className = row.net > 0.5 ? 'td-pos' : row.net < -0.5 ? 'td-neg' : 'td-zer';
+
+    totalDemand += row.hDemand;
+    totalSupply += row.hSupply;
+  });
+
+  const pctColor = Math.abs(pctSum - 100) < 0.1 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('ft-pct').innerHTML    = `<span style="color:${pctColor}">${pctSum.toFixed(2)}</span>`;
+  document.getElementById('ft-demand').textContent = fmt(totalDemand);
+  document.getElementById('ft-supply').textContent = fmt(totalSupply);
+
+  // ── Charts ────────────────────────────────────────────────────────────
+  drawMassCurve(rows, maxIdx, minIdx);
+  drawHourlyChart(rows);
+
+  // ── Recommendations ───────────────────────────────────────────────────
+  renderRec({ tdd, balancing, dead, fire, emergency, total, maxNet, minNet, peakDemandIdx, hDemand, rawPcts, pctSum });
+}
+
+// ── Recommendation engine ─────────────────────────────────────────────────
+function renderRec({ tdd, balancing, dead, fire, emergency, total, maxNet, minNet, peakDemandIdx, hDemand, rawPcts, pctSum }) {
+  const items = [];
+  const totalM3   = total / 1000;
+  const balRatio  = balancing / tdd * 100;
+  const peakFactor = (rawPcts[peakDemandIdx] * 0.24).toFixed(2);
+
+  // 1. Inflow adequacy (gravity)
+  if (currentSystem === 'gravity') {
+    const daily = getQlph() * 24;
+    const diff  = daily - tdd;
+    const pct   = Math.abs(diff / tdd * 100).toFixed(1);
+    if (Math.abs(diff) < tdd * 0.02) {
+      items.push({ cls:'r-good', icon:'✅', title:'Inflow well matched to TDD',
+        detail:`Daily inflow (${(daily/1000).toFixed(2)} m³) equals TDD within 2%. System is hydrologically balanced.` });
+    } else if (diff > 0) {
+      items.push({ cls:'r-warn', icon:'⚠️', title:`Inflow surplus of ${pct}%`,
+        detail:`Source provides ${(diff/1000).toFixed(2)} m³/day more than demand. Consider serving more connections or a larger service area to utilise the available discharge.` });
+    } else {
+      items.push({ cls:'r-warn', icon:'🚨', title:`Inflow deficit of ${pct}% ··· critical`,
+        detail:`Source provides ${(Math.abs(diff)/1000).toFixed(2)} m³/day less than TDD. The reservoir will run dry under steady-state conditions. Seek an additional source or reduce the design demand.` });
+    }
+  }
+
+  // 2. Peak factor note
+  items.push({ cls:'r-info', icon:'📈', title:`Peak demand factor: ${peakFactor}`,
+    detail:`Hour ${pad(peakDemandIdx)}:00–${pad((peakDemandIdx+1)%24)}:00 has the highest demand at ${(rawPcts[peakDemandIdx]).toFixed(1)}% of TDD. ` +
+      (parseFloat(peakFactor) >= 3 ? 'Very high peak ··· consider pressure zone management.' : 'Peak factor is within normal design range.') });
+
+  // 3. Balancing storage ratio
+  if (balRatio < 20) {
+    items.push({ cls:'r-good', icon:'✅', title:`Low balancing storage (${balRatio.toFixed(1)}% of TDD)`,
+      detail:'Demand is well distributed. Compact reservoir design is cost-effective.' });
+  } else if (balRatio <= 35) {
+    items.push({ cls:'r-info', icon:'ℹ️', title:`Moderate balancing storage (${balRatio.toFixed(1)}% of TDD)`,
+      detail: currentSystem === 'gravity'
+        ? 'Typical for gravity systems with morning and evening peaks.'
+        : `Consider increasing pumping hours ··· each extra hour of pumping typically reduces balancing storage by 3–6%.` });
+  } else {
+    items.push({ cls:'r-warn', icon:'⚠️', title:`High balancing storage (${balRatio.toFixed(1)}% of TDD)`,
+      detail: currentSystem === 'pumping'
+        ? `Current pump schedule causes large supply–demand gap. Try more pumping hours or shift start time to cover peak demand hours.`
+        : 'High due to sharp morning/evening peaks. This is typical for Hill pattern but verify the consumption data.' });
+  }
+
+  // 4. % sum check
+  if (Math.abs(pctSum - 100) > 0.2) {
+    items.push({ cls:'r-warn', icon:'⚠️', title:`Consumption % sums to ${pctSum.toFixed(2)}% (should be 100%)`,
+      detail:'Values are auto-normalized to 100% in calculations. Edit the table or select a preset pattern to correct this.' });
+  }
+
+  // 5. Optimum tank size
+  const recSize = STANDARD_SIZES.find(s => s >= totalM3) || (Math.ceil(totalM3 / 500) * 500);
+  const overPct = Math.round((recSize - totalM3) / totalM3 * 100);
+
+  items.push({ cls:'r-best', icon:'💡', title:`Recommended standard tank: ${recSize} m³`,
+    detail:
+      `Required capacity: <strong>${Math.ceil(totalM3)} m³</strong> &nbsp;·&nbsp; ` +
+      `Recommended standard size: <strong>${recSize} m³</strong> (+${overPct}% safety buffer)` });
+
+  // Render
+  document.getElementById('rec-grid').innerHTML = items.map(i =>
+    `<div class="rec-item ${i.cls}">
+       <span class="rec-icon">${i.icon}</span>
+       <div>
+         <div class="rec-title">${i.title}</div>
+         <div class="rec-detail">${i.detail.replace(/\n/g,'<br>')}</div>
+       </div>
+     </div>`).join('');
+}
+
+// ── Print ────────────────────────────────────────────────────────────────────
+function printDesign() {
+  // Populate print header with current inputs
+  const proj = document.getElementById('project-name').value.trim() || 'Unnamed Project';
+  const sys  = currentSystem === 'gravity' ? 'Gravity Fed System' : 'Pumping System';
+  const pat  = document.getElementById('region-select').options[document.getElementById('region-select').selectedIndex].text;
+  const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  document.getElementById('ph-project-name').textContent = proj;
+  document.getElementById('ph-system-type').textContent  = sys;
+  document.getElementById('ph-pattern-lbl').textContent  = pat.split('···')[0].trim();
+  document.getElementById('ph-date-lbl').textContent     = 'Prepared: ' + date;
+
+  // Page 2 mini-header
+  document.getElementById('ph2-project').textContent = proj;
+  document.getElementById('ph2-system').textContent  = sys + '  ·  ' + date;
+
+  window.print();
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  buildTable();
+  addShift(6, 14);
+  calculate();
+});
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(calculate, 120);
+});
+</script>
+
+<script data-goatcounter="https://sanjog.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

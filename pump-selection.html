@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pump Selection ··· Water Supply Design Tool</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='2' y='3' width='9' height='9' rx='1.5' fill='%234a9eff'/%3E%3Crect x='13' y='3' width='9' height='9' rx='1.5' fill='%234a9eff' opacity='0.6'/%3E%3Crect x='2' y='14' width='9' height='9' rx='1.5' fill='%234a9eff' opacity='0.6'/%3E%3Crect x='13' y='14' width='9' height='9' rx='1.5' fill='%234a9eff' opacity='0.3'/%3E%3C/svg%3E">
+  <!-- Inherit app theme from main library -->
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem("app-theme") || "serika-dark";
+      document.documentElement.setAttribute("data-theme", t);
+      try {
+        var cv = JSON.parse(localStorage.getItem("app-custom-vars") || "{}");
+        Object.entries(cv).forEach(function(e) {
+          document.documentElement.style.setProperty(e[0], e[1]);
+        });
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      var(--bg-color,      #0d1117);
+      --surface: var(--sub-alt-color, #161b22);
+      --border:  var(--border-color,  #30363d);
+      --text:    var(--text-color,    #e6edf3);
+      --muted:   var(--sub-color,     #8b949e);
+      --accent:  var(--main-color,    #58a6ff);
+      --green:   #2ecc71;
+      --red:     var(--error-color,   #e74c3c);
+      --orange:  #e67e22;
+      --yellow:  #f5a623;
+    }
+
+    html, body {
+      min-height: 100%;
+      font-family: var(--font);
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* ── Header ── */
+    .tool-header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 0 20px; height: 52px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .back-link {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--muted); text-decoration: none;
+      font-size: 12px; font-weight: 500; white-space: nowrap;
+      padding: 5px 10px; border: 1px solid var(--border); border-radius: 5px;
+      transition: color .15s, border-color .15s;
+    }
+    .back-link:hover { color: var(--text); border-color: var(--accent); }
+    .tool-title-group { flex: 1; }
+    .tool-title-group h1 { font-size: 15px; font-weight: 700; }
+    .tool-subtitle { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .print-btn {
+      padding: 5px 14px; background: transparent;
+      border: 1px solid var(--border); border-radius: 5px;
+      color: var(--muted); font-size: 12px; cursor: pointer; font-family: inherit;
+      transition: all .15s;
+    }
+    .print-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Body layout ── */
+    .tool-body { display: flex; height: calc(100vh - 52px); }
+
+    /* ── Input panel ── */
+    .input-panel {
+      width: 290px; min-width: 290px;
+      background: var(--surface); border-right: 1px solid var(--border);
+      overflow-y: auto;
+    }
+    .panel-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .panel-section h3 {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); margin-bottom: 12px;
+    }
+    .input-row { margin-bottom: 10px; }
+    .input-row:last-child { margin-bottom: 0; }
+    .input-label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; font-weight: 500; }
+    .input-group { display: flex; }
+    .tool-input {
+      flex: 1; padding: 7px 10px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
+      color: var(--text); font-size: 13px; font-family: inherit; outline: none; width: 100%;
+      transition: border-color .15s;
+    }
+    .tool-input:focus { border-color: var(--accent); }
+    .tool-input.with-unit { border-radius: 5px 0 0 5px; }
+    .unit-badge {
+      padding: 7px 10px; background: var(--surface);
+      border: 1px solid var(--border); border-left: none; border-radius: 0 5px 5px 0;
+      color: var(--muted); font-size: 11px; white-space: nowrap;
+      display: flex; align-items: center;
+    }
+    .tool-select {
+      width: 100%; padding: 7px 10px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
+      color: var(--text); font-size: 13px; font-family: inherit; outline: none; cursor: pointer;
+    }
+    .tool-select:focus { border-color: var(--accent); }
+    .hint-text { font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+    .hint-text .hl { color: var(--accent); }
+
+    /* ── Main area ── */
+    .main-area { flex: 1; overflow: auto; display: flex; flex-direction: column; min-width: 0; }
+
+    /* ── Results strip ── */
+    .results-strip {
+      display: flex; flex-wrap: wrap; gap: 0;
+      background: var(--bg); border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .result-card {
+      padding: 12px 18px; border-right: 1px solid var(--border); min-width: 110px;
+    }
+    .result-card.highlight { background: color-mix(in srgb, var(--accent) 6%, var(--bg)); border-top: 2px solid var(--accent); }
+    .rc-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 3px; }
+    .rc-value {
+      font-size: 18px; font-weight: 700; color: var(--accent);
+      font-family: var(--font); line-height: 1.2;
+    }
+    .result-card.highlight .rc-value { font-size: 22px; }
+    .rc-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Calculation table ── */
+    .calc-section { padding: 18px; flex-shrink: 0; }
+    .calc-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .calc-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+
+    .calc-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 18px; }
+
+    .calc-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 700px; }
+    .calc-table thead { background: var(--bg); }
+    .calc-table thead tr { border-bottom: 2px solid var(--border); }
+    .calc-table th {
+      padding: 8px 12px; text-align: left;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+      color: var(--muted); white-space: nowrap; border-right: 1px solid var(--border);
+    }
+    .calc-table th:last-child { border-right: none; }
+    .calc-table th.th-center { text-align: center; }
+
+    .calc-table tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+    .calc-table tbody tr:hover { background: color-mix(in srgb, var(--surface) 60%, var(--bg)); }
+    .calc-table td {
+      padding: 6px 12px; border-right: 1px solid var(--border);
+      font-size: 12px; color: var(--text);
+    }
+    .calc-table td:last-child { border-right: none; }
+    .td-sn  { text-align: center; color: var(--muted); font-weight: 600; width: 36px; font-family: var(--font); }
+    .td-unit { text-align: center; color: var(--muted); font-size: 11px; white-space: nowrap; font-family: var(--font); width: 80px; }
+    .td-val  { text-align: right; font-family: var(--font); font-weight: 600; color: var(--accent); white-space: nowrap; width: 130px; }
+    .td-val.inp { color: var(--green); }
+    .td-val.neg { color: var(--red) !important; }
+    .td-formula { font-size: 10.5px; color: var(--muted); font-style: italic; }
+
+    /* Section divider rows */
+    .tr-section { background: var(--bg) !important; }
+    .tr-section td {
+      padding: 5px 12px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--accent); border-top: 1px solid var(--border);
+    }
+
+    /* Inline editable cells */
+    .td-inline { padding: 3px 8px !important; }
+    .inline-input {
+      width: 100%; padding: 4px 8px;
+      background: color-mix(in srgb, var(--green) 12%, var(--bg)); border: 1px solid var(--green); border-radius: 3px;
+      color: var(--green); font-size: 12px; text-align: right;
+      font-family: var(--font);
+      outline: none; transition: background .15s;
+    }
+    .inline-input:focus { background: color-mix(in srgb, var(--green) 18%, var(--bg)); }
+    .inline-input.blue {
+      background: color-mix(in srgb, var(--accent) 6%, var(--bg)); border-color: var(--accent); color: var(--accent);
+    }
+    .inline-input.blue:focus { background: color-mix(in srgb, var(--accent) 8%, var(--bg)); }
+
+    /* ── Pump specs box ── */
+    .pump-specs-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .pump-specs-hdr {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--border);
+    }
+    .pump-specs-hdr h3 { font-size: 13px; font-weight: 700; }
+    .specs-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0;
+    }
+    .spec-item {
+      padding: 10px 16px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .spec-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+    .spec-val { font-size: 14px; font-weight: 700; color: var(--text); font-family: var(--font); }
+    .spec-val.accent { color: var(--accent); }
+    .spec-val.green { color: var(--green); }
+
+    /* ── Warning banner ── */
+    .warn-banner {
+      margin: 0 18px 12px;
+      padding: 10px 14px; background: color-mix(in srgb, var(--orange) 8%, var(--bg)); border: 1px solid var(--orange);
+      border-radius: 6px; font-size: 11px; color: var(--orange); line-height: 1.55;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .tool-body { flex-direction: column; }
+      .input-panel {
+        width: 100%; min-width: 0;
+        border-right: none; border-bottom: 1px solid var(--border);
+        max-height: 45vh; overflow-y: auto;
+      }
+      .tool-header { padding: 0 12px; }
+      .tool-title-group h1 { font-size: 13px; }
+      .print-btn { display: none; }
+      .calc-section { padding: 12px; }
+    }
+
+    /* ── Print ── */
+    .print-header    { display: none; }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm 15mm 18mm 15mm;
+        @bottom-center {
+          content: "Pump Selection Design Sheet by Er. Sanjog Shakya";
+          font-size: 7pt; color: #888;
+          border-top: 0.5pt solid #ccc; padding-top: 4pt;
+        }
+      }
+
+      *, *::before, *::after { box-sizing: border-box !important; }
+
+      body {
+        background: #fff !important; color: #111 !important; font-size: 9pt !important;
+        -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+        font-family: "Segoe UI", Arial, sans-serif !important;
+      }
+
+      .tool-header, .input-panel { display: none !important; }
+
+      .print-header {
+        display: block !important;
+        padding-bottom: 8px; margin-bottom: 10px;
+        border-bottom: 2px solid #1a5cba;
+      }
+      .ph-logo {
+        display: flex; align-items: center; gap: 6px;
+        color: #1a5cba; font-size: 7.5pt; font-weight: 700; margin-bottom: 4px;
+      }
+      .ph-std { color: #888; font-weight: 400; }
+      .ph-project-name { font-size: 15pt; font-weight: 700; color: #111; margin: 3px 0 4px; }
+      .ph-meta-row { display: flex; gap: 0; font-size: 8pt; color: #555; }
+      .ph-meta-row span { margin-right: 4px; }
+      .ph-meta-row span + span::before { content: '·'; margin-right: 4px; color: #bbb; }
+
+      .tool-body { display: block !important; }
+      .main-area { overflow: visible !important; display: block !important; }
+
+      /* Results strip */
+      .results-strip {
+        display: grid !important; grid-template-columns: repeat(5, 1fr) !important;
+        border: 1px solid #bbb !important; border-radius: 4px !important;
+        background: #f5f5f5 !important; margin-bottom: 8px !important;
+        page-break-inside: avoid !important; break-inside: avoid !important;
+      }
+      .result-card {
+        background: transparent !important; border: none !important;
+        border-right: 1px solid #ccc !important; padding: 6px 10px !important;
+      }
+      .result-card:last-child { border-right: none !important; }
+      .result-card.highlight { background: #eef3ff !important; border-top: 2px solid #1a5cba !important; }
+      .rc-label { color: #555 !important; font-size: 6.5pt !important; }
+      .rc-value { color: #1a3090 !important; font-size: 11pt !important; font-family: Arial, sans-serif !important; }
+      .result-card.highlight .rc-value { font-size: 13pt !important; }
+      .rc-sub { color: #777 !important; font-size: 6.5pt !important; }
+
+      /* Calc section */
+      .calc-section { padding: 0 !important; margin-bottom: 8px !important; }
+      .calc-hdr { margin-bottom: 6px !important; }
+      .calc-title { color: #333 !important; font-size: 8pt !important; }
+      .calc-wrap { overflow: visible !important; border: 1px solid #bbb !important; border-radius: 3px !important; margin-bottom: 10px !important; }
+
+      .calc-table { min-width: 0 !important; width: 100% !important; font-size: 7pt !important; font-family: Arial, sans-serif !important; }
+      .calc-table thead { background: #eeeeee !important; }
+      .calc-table thead tr { border-bottom: 2px solid #999 !important; }
+      .calc-table th { color: #333 !important; border-color: #bbb !important; font-size: 6.5pt !important; padding: 4px 6px !important; }
+      .calc-table td { color: #111 !important; border-color: #ddd !important; padding: 3px 6px !important; font-size: 7pt !important; font-family: Arial, sans-serif !important; }
+      .calc-table tbody tr:hover { background: transparent !important; }
+      .td-sn { color: #666 !important; font-family: Arial, sans-serif !important; }
+      .td-unit { color: #555 !important; font-family: Arial, sans-serif !important; font-size: 6.5pt !important; }
+      .td-val { color: #1a3090 !important; font-family: Arial, sans-serif !important; font-size: 7.5pt !important; }
+      .td-val.inp { color: #0a6e2d !important; }
+      .td-val.neg { color: #b71c1c !important; }
+      .td-formula { color: #666 !important; font-size: 6pt !important; }
+      .tr-section { background: #eeeeee !important; }
+      .tr-section td { color: #1a5cba !important; font-size: 6.5pt !important; padding: 4px 6px !important; border-top: 1px solid #bbb !important; }
+
+      .inline-input {
+        background: transparent !important; border: 1px solid #b0d0b0 !important;
+        color: #0a6e2d !important; font-size: 7pt !important; font-family: Arial, sans-serif !important;
+        padding: 1px 3px !important; text-align: right !important;
+      }
+      .inline-input.blue { border-color: #a0b8d8 !important; color: #1a3090 !important; }
+
+      /* Pump specs box */
+      .pump-specs-box { background: #fff !important; border: 1px solid #bbb !important; border-radius: 4px !important; page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 8px !important; }
+      .pump-specs-hdr { background: #eeeeee !important; border-bottom: 1px solid #bbb !important; padding: 6px 12px !important; }
+      .pump-specs-hdr h3 { color: #222 !important; font-size: 9pt !important; }
+      .pump-specs-hdr svg { color: #1a5cba !important; }
+      .specs-grid { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; }
+      .spec-item { background: #fff !important; padding: 5px 10px !important; border-color: #ddd !important; }
+      .spec-label { color: #555 !important; font-size: 6pt !important; }
+      .spec-val { color: #111 !important; font-size: 8pt !important; font-family: Arial, sans-serif !important; }
+      .spec-val.accent { color: #1a3090 !important; }
+      .spec-val.green { color: #0a6e2d !important; }
+
+      .warn-banner { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="tool-header">
+  <div class="tool-title-group">
+    <h1>Pump Selection Calculator</h1>
+    <span class="tool-subtitle">Submersible Pump Sizing ··· Water Supply DWSS Nepal</span>
+  </div>
+  <button class="print-btn" onclick="window.print()">🖨 Print / Export</button>
+</header>
+
+<!-- Print-only header -->
+<div class="print-header">
+  <div class="ph-logo">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="9" height="9" rx="1.5" fill="#1a5cba"/><rect x="13" y="3" width="9" height="9" rx="1.5" fill="#1a5cba" opacity="0.6"/><rect x="2" y="14" width="9" height="9" rx="1.5" fill="#1a5cba" opacity="0.6"/><rect x="13" y="14" width="9" height="9" rx="1.5" fill="#1a5cba" opacity="0.3"/></svg>
+    PUMP SELECTION &nbsp;<span class="ph-std">- Analytical Calculation of Pump Capacity per Water Demand and Head</span>
+  </div>
+  <div class="ph-project-name" id="ph-project-name">Project Name</div>
+  <div class="ph-meta-row">
+    <span id="ph-station"></span>
+    <span id="ph-route"></span>
+    <span id="ph-date"></span>
+  </div>
+</div>
+
+<div class="tool-body">
+
+  <!-- ── Input Panel ── -->
+  <aside class="input-panel">
+
+    <!-- Project Info -->
+    <div class="panel-section">
+      <h3>Project Information</h3>
+      <div class="input-row">
+        <label class="input-label">Project Name</label>
+        <input type="text" class="tool-input" id="projectName" value="Namche Drinking Water Supply Project" oninput="updatePrint()">
+      </div>
+      <div class="input-row">
+        <label class="input-label">Station ID / Location</label>
+        <input type="text" class="tool-input" id="stationId" value="Station 1 [RCT1 area]" oninput="updatePrint()">
+      </div>
+      <div class="input-row">
+        <label class="input-label">Pumping Route</label>
+        <input type="text" class="tool-input" id="pumpRoute" value="RCT-1 to RVT-1" oninput="updatePrint()">
+      </div>
+    </div>
+
+    <!-- Water Demand -->
+    <div class="panel-section">
+      <h3>Water Demand</h3>
+      <div class="input-row">
+        <label class="input-label">Total Daily Water Demand</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="demand" value="582866" min="1" oninput="calculate()">
+          <span class="unit-badge">lpd</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Adopted Pumping Hours</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="pumpHrs" value="16" min="1" max="24" step="0.5" oninput="calculate()">
+          <span class="unit-badge">hrs</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipe Parameters -->
+    <div class="panel-section">
+      <h3>Pipe Parameters</h3>
+      <div class="input-row">
+        <label class="input-label">Assumed Velocity of Flow</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="vAssumed" value="1.0" min="0.1" max="3.0" step="0.1" oninput="calculate()">
+          <span class="unit-badge">m/s</span>
+        </div>
+        <div class="hint-text">Recommended: <span class="hl">0.8 – 3.0 m/s</span></div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Length of Pipe</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="pipeLength" value="605.5" min="0" oninput="calculate()">
+          <span class="unit-badge">m</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Pipe Material</label>
+        <select class="tool-select" id="pipeMaterial" onchange="calculate()">
+          <option value="GI">GI - Galvanised Iron (Ks = 1 mm)</option>
+          <option value="HDPE">HDPE / Steel (Ks = 0.5 mm)</option>
+          <option value="DI">Ductile Iron (Ks = 0.26 mm)</option>
+          <option value="PVC">PVC (Ks = 0.0015 mm)</option>
+        </select>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Adopted Pipe Size</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="dAdopted" value="150" min="10" step="5" oninput="calculate()">
+          <span class="unit-badge">mm</span>
+        </div>
+        <div class="hint-text">Calculated required dia shown in results</div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Total Pipe Length (Pump -> Tank)</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="totalPipeLength" value="613.5" min="0" oninput="calculate()">
+          <span class="unit-badge">m</span>
+        </div>
+        <div class="hint-text">Depth of pump + GL to GL + tank height</div>
+      </div>
+    </div>
+
+    <!-- Head Analysis -->
+    <div class="panel-section">
+      <h3>Head Analysis</h3>
+      <div class="input-row">
+        <label class="input-label">Total Static Head, Hst</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="hStatic" value="92" step="0.5" oninput="calculate()">
+          <span class="unit-badge">m</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Suction Head, H<sub>s</sub></label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="hSuction" value="4" min="0" step="0.5" oninput="calculate()">
+          <span class="unit-badge">m</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Structure Height to Lift, H<sub>ht</sub></label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="hStructure" value="3" min="0" step="0.5" oninput="calculate()">
+          <span class="unit-badge">m</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Residual Head, H<sub>rd</sub></label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="hResidual" value="3" min="0" step="0.5" oninput="calculate()">
+          <span class="unit-badge">m</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pump & Motor -->
+    <div class="panel-section">
+      <h3>Pump &amp; Motor</h3>
+      <div class="input-row">
+        <label class="input-label">Pump + Motor Efficiency</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="efficiency" value="60" min="10" max="95" oninput="calculate()">
+          <span class="unit-badge">%</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Adopted Pump Power</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="adoptedPowerKW" value="17.3" min="0" step="0.1" oninput="calculate()">
+          <span class="unit-badge">kW</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Power Factor (for transformer)</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="powerFactor" value="0.8" min="0.5" max="1.0" step="0.05" oninput="calculate()">
+          <span class="unit-badge"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pump Curve Data -->
+    <div class="panel-section">
+      <h3>Pump Curve Data</h3>
+      <div class="input-row">
+        <label class="input-label">Discharge Q (from curve)</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="curveQ" value="4.20" min="0" step="0.1" oninput="calculate()">
+          <span class="unit-badge">m³/hr</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Gross Head (available max)</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="grossHead" value="110" min="0" oninput="calculate()">
+          <span class="unit-badge">m</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Selected Pump Model</label>
+        <input type="text" class="tool-input" id="pumpModel" value="CORA 4C/23 + XUMA (S) 100 KSB or Equivalent" oninput="calculate()">
+      </div>
+    </div>
+
+    <!-- Physical Specs -->
+    <div class="panel-section">
+      <h3>Physical Specifications</h3>
+      <div class="input-row">
+        <label class="input-label">Transformer Capacity (Selected)</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="transformerSelected" value="25.00" min="0" step="0.25" oninput="calculate()">
+          <span class="unit-badge">KVA</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Pump/Motor Body Diameter</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="bodyDia" value="150" min="0" oninput="calculate()">
+          <span class="unit-badge">mm</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Pump NRv (Outlet) Diameter</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="nrvDia" value="40" min="0" oninput="calculate()">
+          <span class="unit-badge">mm</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Pump/Motor Body Length</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="bodyLength" value="1800" min="0" oninput="calculate()">
+          <span class="unit-badge">mm</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Cable Diameter</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="cableDia" value="4" min="0" step="0.5" oninput="calculate()">
+          <span class="unit-badge">mm</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label class="input-label">Cable Length</label>
+        <div class="input-group">
+          <input type="number" class="tool-input with-unit" id="cableLength" value="100" min="0" oninput="calculate()">
+          <span class="unit-badge">m</span>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── Main Area ── -->
+  <main class="main-area">
+
+    <!-- Results strip -->
+    <div class="results-strip">
+      <div class="result-card highlight">
+        <div class="rc-label">Required Q</div>
+        <div class="rc-value" id="rs-Q-lps"></div>
+        <div class="rc-sub">lps (during pumping)</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label">Required Q</div>
+        <div class="rc-value" id="rs-Q-m3hr"></div>
+        <div class="rc-sub">m³/hr</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label">Pipe Ø Needed</div>
+        <div class="rc-value" id="rs-dNeeded"></div>
+        <div class="rc-sub">mm</div>
+      </div>
+      <div class="result-card highlight">
+        <div class="rc-label">Total Head</div>
+        <div class="rc-value" id="rs-hTotal"></div>
+        <div class="rc-sub">m</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label">Power Required</div>
+        <div class="rc-value" id="rs-power"></div>
+        <div class="rc-sub">kW (calc.)</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label">Friction Factor f</div>
+        <div class="rc-value" id="rs-f"></div>
+        <div class="rc-sub">Swamee-Jain</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label">Reynolds No.</div>
+        <div class="rc-value" id="rs-Re"></div>
+        <div class="rc-sub"></div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label">Transformer Req.</div>
+        <div class="rc-value" id="rs-transformer"></div>
+        <div class="rc-sub">KVA</div>
+      </div>
+    </div>
+
+    <div id="warn-negative" class="warn-banner" style="display:none;">
+      ⚠ Total head is negative - the destination is lower than the source (gravity-assisted). Review head values. Power shown is magnitude only.
+    </div>
+
+    <!-- Calculation Table -->
+    <div class="calc-section">
+      <div class="calc-hdr">
+        <span class="calc-title">Analytical Calculation of Pump Capacity as per Water Demand and Head</span>
+      </div>
+
+      <div class="calc-wrap">
+        <table class="calc-table">
+          <thead>
+            <tr>
+              <th class="th-center">SN</th>
+              <th>Pump Capacity Calculation</th>
+              <th class="th-center">Unit</th>
+              <th class="th-center">Result</th>
+              <th>Formula / Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- Section A: Demand & Flow -->
+            <tr class="tr-section"><td colspan="5">A - Water Demand &amp; Required Flow</td></tr>
+
+            <tr>
+              <td class="td-sn">1</td>
+              <td>Total daily Water Demand</td>
+              <td class="td-unit">lpd</td>
+              <td class="td-val inp" id="c-demand"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn">2</td>
+              <td>Discharge to be pumped per second (24 hrs)</td>
+              <td class="td-unit">lps</td>
+              <td class="td-val" id="c-Q24"></td>
+              <td class="td-formula">Q = Demand / (24 × 3600)</td>
+            </tr>
+            <tr>
+              <td class="td-sn">3</td>
+              <td>Adopted Pumping Hours</td>
+              <td class="td-unit">hrs</td>
+              <td class="td-val inp" id="c-pumpHrs"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td style="padding-left:22px;">Required discharge during pumping</td>
+              <td class="td-unit">lps</td>
+              <td class="td-val" id="c-Qpump-lps"></td>
+              <td class="td-formula">Q = Demand / (T<sub>pump</sub> × 3600)</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td style="padding-left:22px;"></td>
+              <td class="td-unit">lpm</td>
+              <td class="td-val" id="c-Qpump-lpm"></td>
+              <td class="td-formula">= Q<sub>lps</sub> × 60</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td style="padding-left:22px;"></td>
+              <td class="td-unit">m³/hr</td>
+              <td class="td-val" id="c-Qpump-m3hr"></td>
+              <td class="td-formula">= Q<sub>lps</sub> × 3.6</td>
+            </tr>
+
+            <!-- Section B: Pipe Sizing -->
+            <tr class="tr-section"><td colspan="5">B - Pipe Sizing</td></tr>
+
+            <tr>
+              <td class="td-sn">5</td>
+              <td>Velocity of flow (Assumed)</td>
+              <td class="td-unit">(0.8–3.0) m/s</td>
+              <td class="td-val inp" id="c-vAssumed"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn">6</td>
+              <td>Length of pipe</td>
+              <td class="td-unit">m</td>
+              <td class="td-val inp" id="c-pipeLength"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn">7</td>
+              <td>Diameter of pipe (Needed)</td>
+              <td class="td-unit">mm</td>
+              <td class="td-val" id="c-dNeeded"></td>
+              <td class="td-formula">D = √(4Q / πv)</td>
+            </tr>
+            <tr>
+              <td class="td-sn">9</td>
+              <td><strong>Adopted size of pipe</strong></td>
+              <td class="td-unit">mm</td>
+              <td class="td-val inp" id="c-dAdopted"></td>
+              <td class="td-formula">Input (existing / selected)</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td style="padding-left:22px;">New velocity with adopted pipe, v</td>
+              <td class="td-unit">m/s</td>
+              <td class="td-val" id="c-vNew"></td>
+              <td class="td-formula">v = 4Q / (πD²)</td>
+            </tr>
+            <tr>
+              <td class="td-sn">10</td>
+              <td>Total pipe length (Pump depth + GL to GL + Tank height)</td>
+              <td class="td-unit">m</td>
+              <td class="td-val inp" id="c-totalPipeLen"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+
+            <!-- Section C: Friction -->
+            <tr class="tr-section"><td colspan="5">C - Friction Analysis (Swamee-Jain / Colebrook-White)</td></tr>
+
+            <tr>
+              <td class="td-sn">11</td>
+              <td>Total Static Head, H<sub>st</sub></td>
+              <td class="td-unit">m</td>
+              <td class="td-val inp" id="c-hStatic"></td>
+              <td class="td-formula">Input (from GL)</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td>Kinematic viscosity of water at 20°C, υ</td>
+              <td class="td-unit">m²/s</td>
+              <td class="td-val">1.00 × 10⁻⁶</td>
+              <td class="td-formula">Standard value</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td>Reynolds Number, Re = vD/υ</td>
+              <td class="td-unit"></td>
+              <td class="td-val" id="c-Re"></td>
+              <td class="td-formula">Re = v<sub>adopted</sub> × D<sub>adopted</sub> / υ</td>
+            </tr>
+            <tr>
+              <td class="td-sn">12</td>
+              <td>Absolute roughness, K<sub>s</sub> (<span id="c-material-label">GI</span>)</td>
+              <td class="td-unit">mm</td>
+              <td class="td-val inp" id="c-Ks"></td>
+              <td class="td-formula">GI=1.0 mm · HDPE/Steel=0.5 mm · DI=0.26 mm · PVC=0.0015 mm</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td>Friction factor, f (Swamee-Jain explicit)</td>
+              <td class="td-unit"></td>
+              <td class="td-val" id="c-f"></td>
+              <td class="td-formula">f = 0.25 / [log₁₀(K<sub>s</sub>/3.7D + 5.74/Re⁰·⁹)]²</td>
+            </tr>
+            <tr>
+              <td class="td-sn">13</td>
+              <td>Headloss, H<sub>L</sub> (assuming single pipe material, 10% minor loss)</td>
+              <td class="td-unit">m</td>
+              <td class="td-val" id="c-HL-single"></td>
+              <td class="td-formula">H<sub>L</sub> = f × (1.1L) / D × v² / (2g)</td>
+            </tr>
+
+            <!-- Section D: Total Head -->
+            <tr class="tr-section"><td colspan="5">D - Total Head &amp; Power</td></tr>
+
+            <tr>
+              <td class="td-sn"></td>
+              <td>Suction Head, H<sub>s</sub></td>
+              <td class="td-unit">m</td>
+              <td class="td-val inp" id="c-hSuction"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td>Structure height to lift, H<sub>ht</sub></td>
+              <td class="td-unit">m</td>
+              <td class="td-val inp" id="c-hStructure"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td>Residual Head, H<sub>rd</sub></td>
+              <td class="td-unit">m</td>
+              <td class="td-val inp" id="c-hResidual"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn">15</td>
+              <td><strong>Total Head against which pump has to work</strong></td>
+              <td class="td-unit">m</td>
+              <td class="td-val" id="c-hTotal"></td>
+              <td class="td-formula">H = H<sub>st</sub> + H<sub>L</sub> + H<sub>s</sub> + H<sub>ht</sub> + H<sub>rd</sub></td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td>Assume Efficiency of Pump + Motor</td>
+              <td class="td-unit">%</td>
+              <td class="td-val inp" id="c-efficiency"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn">16</td>
+              <td>Power of Pump required</td>
+              <td class="td-unit">HP</td>
+              <td class="td-val" id="c-powerHP"></td>
+              <td class="td-formula">P = 9.81 × Q<sub>m³/s</sub> × |H| / η &nbsp;[kW] ÷ 0.746</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td></td>
+              <td class="td-unit">kW</td>
+              <td class="td-val" id="c-powerKW"></td>
+              <td class="td-formula">P = 9.81 × Q<sub>m³/s</sub> × |H| / η</td>
+            </tr>
+
+            <!-- Section E: Pump Selection -->
+            <tr class="tr-section"><td colspan="5">E - Selection of Pump and Motor as per Availability and Performance Curve</td></tr>
+
+            <tr>
+              <td class="td-sn">17</td>
+              <td>Power of Pump adopted (from performance curve)</td>
+              <td class="td-unit">HP</td>
+              <td class="td-val inp" id="c-adoptedHP"></td>
+              <td class="td-formula">= kW / 0.746</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td></td>
+              <td class="td-unit">kW</td>
+              <td class="td-val inp" id="c-adoptedKW"></td>
+              <td class="td-formula">Input (from pump datasheet)</td>
+            </tr>
+            <tr>
+              <td class="td-sn">18</td>
+              <td>Discharge Q (from performance curve)</td>
+              <td class="td-unit">m³/hr</td>
+              <td class="td-val inp" id="c-curveQ-m3hr"></td>
+              <td class="td-formula">Input (from pump curve)</td>
+            </tr>
+            <tr>
+              <td class="td-sn"></td>
+              <td></td>
+              <td class="td-unit">LPM</td>
+              <td class="td-val" id="c-curveQ-lpm"></td>
+              <td class="td-formula">= Q<sub>m³/hr</sub> × 1000 / 60</td>
+            </tr>
+            <tr>
+              <td class="td-sn">19</td>
+              <td>Gross Head (available maximum)</td>
+              <td class="td-unit">m</td>
+              <td class="td-val inp" id="c-grossHead"></td>
+              <td class="td-formula">Input (from pump curve)</td>
+            </tr>
+            <tr>
+              <td class="td-sn">20</td>
+              <td>Selected Pump Model or Equivalent</td>
+              <td class="td-unit"></td>
+              <td class="td-val" id="c-pumpModel" style="font-family:inherit; font-size:11px; color:var(--yellow);"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn">21</td>
+              <td>Transformer Capacity (Required)</td>
+              <td class="td-unit">KVA</td>
+              <td class="td-val" id="c-transformerReq"></td>
+              <td class="td-formula">= P<sub>adopted kW</sub> / Power Factor</td>
+            </tr>
+            <tr>
+              <td class="td-sn">22</td>
+              <td>Transformer Capacity (Selected)</td>
+              <td class="td-unit">KVA</td>
+              <td class="td-val inp" id="c-transformerSel"></td>
+              <td class="td-formula">Input (from supplier)</td>
+            </tr>
+            <tr>
+              <td class="td-sn">23</td>
+              <td>Pump/Motor Body Diameter</td>
+              <td class="td-unit">mm</td>
+              <td class="td-val inp" id="c-bodyDia"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn">24</td>
+              <td>Pump NRv (Outlet) Diameter</td>
+              <td class="td-unit">mm</td>
+              <td class="td-val inp" id="c-nrvDia"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn">25</td>
+              <td>Pump/Motor Body Length</td>
+              <td class="td-unit">mm</td>
+              <td class="td-val inp" id="c-bodyLength"></td>
+              <td class="td-formula">Input</td>
+            </tr>
+            <tr>
+              <td class="td-sn">26</td>
+              <td>Submersible pumpset cable</td>
+              <td class="td-unit">mm²</td>
+              <td class="td-val inp" id="c-cableDia"></td>
+              <td class="td-formula" id="c-cableLen-lbl">100 m length</td>
+            </tr>
+
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pump Specs Box -->
+      <div class="pump-specs-box">
+        <div class="pump-specs-hdr">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="color:var(--accent)"><path d="M6 1a1 1 0 00-1 1v1H2a1 1 0 000 2h.5v9a1 1 0 001 1h9a1 1 0 001-1V5H14a1 1 0 000-2h-3V2a1 1 0 00-1-1H6zm1 3h2v1H7V4zm2 3v6H7V7h2z"/></svg>
+          <h3>Selected Pump Summary</h3>
+        </div>
+        <div class="specs-grid">
+          <div class="spec-item">
+            <div class="spec-label">Pump Model</div>
+            <div class="spec-val accent" id="sp-pumpModel"></div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">Adopted Power</div>
+            <div class="spec-val green" id="sp-power"></div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">Discharge (Curve)</div>
+            <div class="spec-val accent" id="sp-discharge"></div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">Gross Head</div>
+            <div class="spec-val accent" id="sp-grossHead"></div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">Transformer</div>
+            <div class="spec-val" id="sp-transformer"></div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">Body Ø × Length</div>
+            <div class="spec-val" id="sp-body"></div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">NRv Outlet Ø</div>
+            <div class="spec-val" id="sp-nrv"></div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">Cable</div>
+            <div class="spec-val" id="sp-cable"></div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">Pipe (adopted)</div>
+            <div class="spec-val" id="sp-pipe"></div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">Total Pipe Length</div>
+            <div class="spec-val" id="sp-pipeLen"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /calc-section -->
+  </main>
+</div>
+
+<script>
+  const Ks_MAP = { GI: 1.0, HDPE: 0.5, DI: 0.26, PVC: 0.0015 };
+  const MAT_LABEL = { GI: 'GI - 1.0 mm', HDPE: 'HDPE / Steel - 0.5 mm', DI: 'Ductile Iron - 0.26 mm', PVC: 'PVC - 0.0015 mm' };
+
+  function g(id) { return document.getElementById(id); }
+  function inp(id) { return parseFloat(g(id).value) || 0; }
+  function inpStr(id) { return g(id).value.trim(); }
+
+  function fmt(v, dec) {
+    if (!isFinite(v)) return '';
+    if (Math.abs(v) >= 1e6) return v.toExponential(2);
+    return v.toFixed(dec !== undefined ? dec : 2);
+  }
+  function fmtInt(v) { if (!isFinite(v)) return ''; return Math.round(v).toLocaleString(); }
+  function fmtSci(v) { if (!isFinite(v)) return ''; return v.toExponential(2); }
+
+  function set(id, val, cls) {
+    const el = g(id);
+    if (!el) return;
+    el.textContent = val;
+    if (cls) { el.className = el.className.replace(/\b(inp|neg)\b/g, '').trim() + ' ' + cls; }
+  }
+
+  function calculate() {
+    // ── Inputs ──
+    const demand       = inp('demand');        // lpd
+    const pumpHrs      = inp('pumpHrs');       // hrs
+    const vAssumed     = inp('vAssumed');      // m/s
+    const pipeLength   = inp('pipeLength');    // m
+    const material     = g('pipeMaterial').value;
+    const dAdoptedMm   = inp('dAdopted');      // mm
+    const totalPipeLen = inp('totalPipeLength'); // m
+    const hStatic      = inp('hStatic');       // m
+    const hSuction     = inp('hSuction');      // m
+    const hStructure   = inp('hStructure');    // m
+    const hResidual    = inp('hResidual');     // m
+    const eta          = inp('efficiency') / 100;
+    const adoptedKW    = inp('adoptedPowerKW');
+    const powerFactor  = inp('powerFactor');
+    const curveQ_m3hr  = inp('curveQ');        // m3/hr
+    const grossHead    = inp('grossHead');     // m
+
+    const Ks_mm = Ks_MAP[material] || 1.0;
+
+    // ── Derived ──
+    const Q24_lps      = demand / 86400;
+    const Qpump_lps    = demand / (pumpHrs * 3600);
+    const Qpump_lpm    = Qpump_lps * 60;
+    const Qpump_m3hr   = Qpump_lps * 3.6;
+    const Qpump_m3s    = Qpump_lps / 1000;
+
+    const dNeeded_mm   = (Qpump_m3s > 0 && vAssumed > 0)
+      ? Math.sqrt(4 * Qpump_m3s / (Math.PI * vAssumed)) * 1000
+      : 0;
+
+    const dAdopted_m   = dAdoptedMm / 1000;
+    const vNew         = (dAdopted_m > 0)
+      ? (4 * Qpump_m3s) / (Math.PI * dAdopted_m * dAdopted_m)
+      : 0;
+
+    const nu = 1e-6;
+    const Re = (dAdopted_m > 0 && vNew > 0) ? vNew * dAdopted_m / nu : 0;
+
+    // Swamee-Jain friction factor
+    let f = 0;
+    if (Re > 4000 && dAdopted_m > 0) {
+      const Ks_m = Ks_mm / 1000;
+      const logArg = Ks_m / (3.7 * dAdopted_m) + 5.74 / Math.pow(Re, 0.9);
+      if (logArg > 0) f = 0.25 / Math.pow(Math.log10(logArg), 2);
+    }
+
+    // Headloss single material (10% minor loss factor)
+    const HL_single = (dAdopted_m > 0 && vNew > 0)
+      ? f * (1.1 * totalPipeLen) / dAdopted_m * (vNew * vNew) / (2 * 9.81)
+      : 0;
+
+    // Total head (uses calculated HL_single from Swamee-Jain)
+    const hTotal = hStatic + HL_single + hSuction + hStructure + hResidual;
+
+    // Power (matches DWSS Nepal convention)
+    // P_kW = 9.81 × Q_m3s × |H| / η
+    const P_kW_calc = (Qpump_m3s > 0 && eta > 0)
+      ? 9.81 * Qpump_m3s * Math.abs(hTotal) / eta
+      : 0;
+    const P_HP_calc = P_kW_calc / 0.746;
+
+    // Adopted
+    const adoptedHP    = adoptedKW / 0.746;
+    const curveQ_lpm   = curveQ_m3hr * 1000 / 60;
+    const transformerReq = (powerFactor > 0) ? adoptedKW / powerFactor : 0;
+
+    // ── Update results strip ──
+    set('rs-Q-lps',  fmt(Qpump_lps, 2));
+    set('rs-Q-m3hr', fmt(Qpump_m3hr, 2));
+    set('rs-dNeeded', fmt(dNeeded_mm, 1));
+    const hTotalEl = g('rs-hTotal');
+    hTotalEl.textContent = fmt(hTotal, 2);
+    hTotalEl.style.color = hTotal < 0 ? 'var(--red)' : 'var(--accent)';
+    set('rs-power', fmt(P_kW_calc, 2));
+    set('rs-f', fmt(f, 4));
+    set('rs-Re', Re >= 1e6 ? (Re/1e6).toFixed(2)+'M' : fmtInt(Re));
+    set('rs-transformer', fmt(transformerReq, 2));
+
+    // Warning
+    g('warn-negative').style.display = hTotal < 0 ? '' : 'none';
+
+    // ── Update calculation table ──
+    set('c-demand',       fmtInt(demand),        'inp');
+    set('c-Q24',          fmt(Q24_lps, 2));
+    set('c-pumpHrs',      fmt(pumpHrs, 2),        'inp');
+    set('c-Qpump-lps',    fmt(Qpump_lps, 2));
+    set('c-Qpump-lpm',    fmt(Qpump_lpm, 1));
+    set('c-Qpump-m3hr',   fmt(Qpump_m3hr, 2));
+    set('c-vAssumed',     fmt(vAssumed, 2),       'inp');
+    set('c-pipeLength',   fmt(pipeLength, 2),     'inp');
+    set('c-dNeeded',      fmt(dNeeded_mm, 2));
+    set('c-dAdopted',     fmt(dAdoptedMm, 0),     'inp');
+    set('c-vNew',         fmt(vNew, 2));
+    set('c-totalPipeLen', fmt(totalPipeLen, 2),   'inp');
+    set('c-hStatic',      fmt(hStatic, 2),        hStatic < 0 ? 'inp neg' : 'inp');
+    set('c-Re',           Re > 0 ? Re.toLocaleString(undefined, {maximumFractionDigits:0}) : '');
+    g('c-material-label').textContent = material;
+    set('c-Ks',           fmt(Ks_mm, 4),          'inp');
+    set('c-f',            fmt(f, 4));
+    set('c-HL-single',    fmt(HL_single, 2));
+    set('c-hSuction',     fmt(hSuction, 2),        'inp');
+    set('c-hStructure',   fmt(hStructure, 2),      'inp');
+    set('c-hResidual',    fmt(hResidual, 2),       'inp');
+
+    const hTotalCell = g('c-hTotal');
+    hTotalCell.textContent = fmt(hTotal, 2);
+    hTotalCell.className = 'td-val' + (hTotal < 0 ? ' neg' : '');
+
+    set('c-efficiency',   fmt(eta * 100, 0),       'inp');
+    set('c-powerHP',      (hTotal < 0 ? '(' : '') + fmt(P_HP_calc, 2) + (hTotal < 0 ? ')' : ''));
+    set('c-powerKW',      (hTotal < 0 ? '(' : '') + fmt(P_kW_calc, 2) + (hTotal < 0 ? ')' : ''));
+
+    set('c-adoptedHP',    fmt(adoptedHP, 2),       'inp');
+    set('c-adoptedKW',    fmt(adoptedKW, 2),       'inp');
+    set('c-curveQ-m3hr',  fmt(curveQ_m3hr, 2),    'inp');
+    set('c-curveQ-lpm',   fmt(curveQ_lpm, 1));
+    set('c-grossHead',    fmt(grossHead, 2),       'inp');
+    set('c-pumpModel',    inpStr('pumpModel'));
+    g('c-pumpModel').style.fontFamily = 'inherit';
+    g('c-pumpModel').style.fontSize = '11px';
+    g('c-pumpModel').style.color = 'var(--yellow)';
+
+    set('c-transformerReq', fmt(transformerReq, 2));
+    set('c-transformerSel', fmt(inp('transformerSelected'), 2), 'inp');
+    set('c-bodyDia',       fmt(inp('bodyDia'), 0),   'inp');
+    set('c-nrvDia',        fmt(inp('nrvDia'), 0),    'inp');
+    set('c-bodyLength',    fmt(inp('bodyLength'), 0),'inp');
+    set('c-cableDia',      fmt(inp('cableDia'), 1),  'inp');
+    g('c-cableLen-lbl').textContent = inp('cableLength') + ' m length';
+    // ── Summary box ──
+    set('sp-pumpModel',    inpStr('pumpModel'));
+    set('sp-power',        fmt(adoptedKW, 2) + ' kW (' + fmt(adoptedHP, 2) + ' HP)');
+    set('sp-discharge',    fmt(curveQ_m3hr, 2) + ' m³/hr (' + fmt(curveQ_lpm, 1) + ' LPM)');
+    set('sp-grossHead',    fmt(grossHead, 2) + ' m');
+    set('sp-transformer',  fmt(transformerReq, 2) + ' KVA req · ' + fmt(inp('transformerSelected'), 2) + ' KVA selected');
+    set('sp-body',         fmt(inp('bodyDia'), 0) + ' mm Ø × ' + fmt(inp('bodyLength'), 0) + ' mm');
+    set('sp-nrv',          fmt(inp('nrvDia'), 0) + ' mm');
+    set('sp-cable',        fmt(inp('cableDia'), 1) + ' mm Ø · ' + fmt(inp('cableLength'), 0) + ' m');
+    set('sp-pipe',         fmt(dAdoptedMm, 0) + ' mm NB · ' + material);
+    set('sp-pipeLen',      fmt(totalPipeLen, 2) + ' m');
+
+    updatePrint();
+  }
+
+  function updatePrint() {
+    const name = inpStr('projectName');
+    g('ph-project-name').textContent = name || 'Project Name';
+    const station = inpStr('stationId');
+    const route   = inpStr('pumpRoute');
+    g('ph-station').textContent = station;
+    g('ph-route').textContent   = route;
+    g('ph-date').textContent    = 'Date: ' + new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  // Init
+  calculate();
+</script>
+
+<script data-goatcounter="https://sanjog.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

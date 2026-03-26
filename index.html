@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="serika-dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sanjog's App Library — Engineering Apps &amp; Tools</title>
+  <meta name="description" content="A curated library of civil engineering desktop apps, web calculators, and academic research by Sanjog." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='2' y='3' width='9' height='9' rx='1.5' fill='%23e2b714'/%3E%3Crect x='13' y='3' width='9' height='9' rx='1.5' fill='%23e2b714' opacity='0.6'/%3E%3Crect x='2' y='14' width='9' height='9' rx='1.5' fill='%23e2b714' opacity='0.6'/%3E%3Crect x='13' y='14' width='9' height='9' rx='1.5' fill='%23e2b714' opacity='0.3'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+  <script data-goatcounter="https://sanjog.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<!-- ============================================================
+     NAVBAR
+     ============================================================ -->
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo" data-page="home">
+      <span class="logo-bracket">[</span>app.lib<span class="logo-bracket">]</span>
+    </a>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#" class="nav-link" data-page="apps" id="nl-apps">applications</a></li>
+      <li><a href="#" class="nav-link" data-page="tools" id="nl-tools">tools</a></li>
+      <li><a href="#" class="nav-link" data-page="design-sheets" id="nl-design-sheets">design sheets</a></li>
+      <li><a href="#" class="nav-link" data-page="academic" id="nl-academic">academic</a></li>
+      <li>
+        <button class="btn btn-ghost btn-sm" id="theme-toggle-btn" title="Customize theme">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 5a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM4.5 8a3.5 3.5 0 117 0 3.5 3.5 0 01-7 0z"/>
+            <path d="M8 0a.5.5 0 01.5.5v2a.5.5 0 01-1 0v-2A.5.5 0 018 0zm0 13a.5.5 0 01.5.5v2a.5.5 0 01-1 0v-2A.5.5 0 018 13zm8-5a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2a.5.5 0 01.5.5zM3 8a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2A.5.5 0 013 8zm10.657-5.657a.5.5 0 010 .707l-1.414 1.415a.5.5 0 11-.707-.708l1.414-1.414a.5.5 0 01.707 0zm-9.193 9.193a.5.5 0 010 .707L3.05 13.657a.5.5 0 01-.707-.707l1.414-1.414a.5.5 0 01.707 0zm9.193 2.121a.5.5 0 01-.707 0l-1.414-1.414a.5.5 0 01.707-.707l1.414 1.414a.5.5 0 010 .707zM4.464 4.465a.5.5 0 01-.707 0L2.343 3.05a.5.5 0 11.707-.707l1.414 1.414a.5.5 0 010 .708z"/>
+          </svg>
+          theme
+        </button>
+      </li>
+      <li>
+        <span class="nav-auth-status" id="nav-auth-status"></span>
+        <button id="btn-logout" style="display:none;" onclick="window.authLogout && authLogout()">sign out</button>
+        <button class="btn btn-accent btn-sm" id="nav-login-btn">login</button>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<!-- hidden compatibility shims — required by app.js & auth.js -->
+<aside id="sidebar" aria-hidden="true">
+  <button id="sidebar-close-btn"></button>
+  <nav>
+    <span class="nav-label">Browse</span>
+    <a href="#" class="nav-item active" data-filter="all">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A1.5 1.5 0 012.5 1h3A1.5 1.5 0 017 2.5v3A1.5 1.5 0 015.5 7h-3A1.5 1.5 0 011 5.5v-3zm8 0A1.5 1.5 0 0110.5 1h3A1.5 1.5 0 0115 2.5v3A1.5 1.5 0 0113.5 7h-3A1.5 1.5 0 019 5.5v-3zm-8 8A1.5 1.5 0 012.5 9h3A1.5 1.5 0 017 10.5v3A1.5 1.5 0 015.5 15h-3A1.5 1.5 0 011 13.5v-3zm8 0A1.5 1.5 0 0110.5 9h3A1.5 1.5 0 0115 10.5v3A1.5 1.5 0 0113.5 15h-3A1.5 1.5 0 019 13.5v-3z"/></svg>
+      All Applications
+      <span class="nav-count" id="count-all">0</span>
+    </a>
+    <span class="nav-label">Categories</span>
+    <a href="#" class="nav-item" data-filter="Civil">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M14.763.075A.5.5 0 0115 .5v15a.5.5 0 01-.5.5h-3a.5.5 0 01-.5-.5V14h-1v1.5a.5.5 0 01-.5.5h-9a.5.5 0 01-.5-.5V10a.5.5 0 01.342-.474L6 7.64V4.5a.5.5 0 01.276-.447l8-4a.5.5 0 01.487.022zM6 8.694L1 10.36V15h5V8.694zM7 15h2v-1.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5V15h2V1.309l-7 3.5V15z"/></svg>
+      Civil Engineering
+      <span class="nav-count" id="count-Civil">0</span>
+    </a>
+    <a href="#" class="nav-item" data-filter="CAD">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 5a2 2 0 012-2h7.5a2 2 0 011.983 1.738l3.11-1.382A1 1 0 0116 4.269v7.462a1 1 0 01-1.406.913l-3.111-1.382A2 2 0 019.5 13H2a2 2 0 01-2-2V5z"/></svg>
+      CAD / Drawing
+      <span class="nav-count" id="count-CAD">0</span>
+    </a>
+    <a href="#" class="nav-item" data-filter="Utility">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 01-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 01.872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 012.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 012.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 01.872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 01-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 01-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 110-5.858 2.929 2.929 0 010 5.858z"/></svg>
+      Utilities
+      <span class="nav-count" id="count-Utility">0</span>
+    </a>
+    <a href="#" class="nav-item" data-filter="Structural">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8.354 1.146a.5.5 0 00-.708 0l-6 6A.5.5 0 002 7.5v7a.5.5 0 00.5.5h4a.5.5 0 00.5-.5v-4h2v4a.5.5 0 00.5.5h4a.5.5 0 00.5-.5v-7a.5.5 0 00-.146-.354L13 5.793V2.5a.5.5 0 00-.5-.5h-1a.5.5 0 00-.5.5v1.293L8.354 1.146z"/></svg>
+      Structural
+      <span class="nav-count" id="count-Structural">0</span>
+    </a>
+    <!-- sidebar footer compatibility -->
+    <div style="margin-top:auto; padding:16px;">
+      <div id="auth-status" style="font-size:11px; word-break:break-all;"></div>
+    </div>
+  </nav>
+</aside>
+<div id="sidebar-overlay"></div>
+<button id="hamburger-btn" style="display:none;" aria-hidden="true"></button>
+
+<main class="main-content" id="main-content">
+
+<!-- ============================================================
+     HOME PAGE (Hero + Unit Converter)
+     ============================================================ -->
+<div class="app-page" id="page-home">
+
+<section class="hero" id="home">
+  <div class="hero-inner fade-in">
+    <p class="hero-label">engineering apps &amp; research tools</p>
+
+    <h1 class="hero-title">
+      Sanjog's <span class="accent">App</span> Library
+    </h1>
+
+    <p class="hero-tagline">
+      <span id="typewriter"></span><span class="cursor">|</span>
+    </p>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val" id="hero-stat-apps">—</div>
+        <div class="hero-stat-label">Applications</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val" id="hero-stat-sheets">—</div>
+        <div class="hero-stat-label">Design Sheets</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">Windows</div>
+        <div class="hero-stat-label">Platform</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">.NET</div>
+        <div class="hero-stat-label">Framework</div>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <a href="#" class="btn btn-accent" data-page="apps">browse apps</a>
+      <a href="#" class="btn btn-primary" data-page="tools">engineering tools</a>
+      <button class="btn btn-ghost" id="hero-login-btn">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm2-3a2 2 0 11-4 0 2 2 0 014 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.029 10 8 10c-2.029 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>
+        sign in
+      </button>
+    </div>
+  </div>
+  <div class="hero-scroll" aria-hidden="true">scroll</div>
+</section>
+
+</div><!-- /page-home -->
+
+<!-- ============================================================
+     TOOLS PAGE
+     ============================================================ -->
+<div class="app-page" id="page-tools" style="display:none">
+  <section class="section">
+    <div class="container">
+
+      <div class="main-header" style="margin-bottom:1.25rem;">
+        <div class="header-title-area">
+          <h1 class="main-title">Engineering Tools</h1>
+          <span class="result-count" id="tools-result-count"></span>
+        </div>
+        <span style="font-size:0.72rem; color:var(--sub-color);">in-browser calculators &amp; converters</span>
+      </div>
+
+      <!-- Tool card grid (rendered by JS) -->
+      <div class="card-grid" id="tools-card-grid"></div>
+
+    </div>
+  </section>
+</div><!-- /page-tools -->
+
+<!-- ============================================================
+     APPLICATIONS PAGE
+     ============================================================ -->
+<div class="app-page" id="page-apps" style="display:none">
+  <section class="section">
+    <div class="container">
+
+      <!-- Category filter pills -->
+      <div class="filter-pills fade-in" id="filter-pills-row">
+        <a href="#" class="nav-item active" data-filter="all" id="fp-all">
+          all
+          <span class="nav-count" id="fp-count-all">0</span>
+        </a>
+        <a href="#" class="nav-item" data-filter="Civil" id="fp-civil">
+          civil
+          <span class="nav-count" id="fp-count-civil">0</span>
+        </a>
+        <a href="#" class="nav-item" data-filter="CAD" id="fp-cad">
+          cad
+          <span class="nav-count" id="fp-count-cad">0</span>
+        </a>
+        <a href="#" class="nav-item" data-filter="Utility" id="fp-utility">
+          utility
+          <span class="nav-count" id="fp-count-utility">0</span>
+        </a>
+        <a href="#" class="nav-item" data-filter="Structural" id="fp-structural">
+          structural
+          <span class="nav-count" id="fp-count-structural">0</span>
+        </a>
+      </div>
+
+      <!-- Main header -->
+      <div class="main-header">
+        <div class="header-title-area">
+          <h1 class="main-title" id="section-title">All Applications</h1>
+          <span class="result-count" id="result-count"></span>
+        </div>
+        <div class="search-wrap">
+          <svg class="search-icon" viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+            <path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85a1.007 1.007 0 00-.115-.099zM12 6.5a5.5 5.5 0 11-11 0 5.5 5.5 0 0111 0z"/>
+          </svg>
+          <input type="text" id="search-input" class="search-input" placeholder="search applications..." />
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="stats-bar" id="stats-bar">
+        <div class="stat-item">
+          <span class="stat-value" id="stat-total">0</span>
+          <span class="stat-label">Applications</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-cats">0</span>
+          <span class="stat-label">Categories</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-platform">Windows</span>
+          <span class="stat-label">Platform</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-framework">.NET</span>
+          <span class="stat-label">Framework</span>
+        </div>
+      </div>
+
+      <!-- App card grid -->
+      <div class="card-grid" id="card-grid"></div>
+
+      <!-- Empty state -->
+      <div class="empty-state" id="empty-state" style="display:none;">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="28" r="16" stroke="currentColor" stroke-width="2"/>
+          <path d="M44 40l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p>no applications match your search.</p>
+      </div>
+
+    </div>
+  </section>
+</div><!-- /page-apps -->
+
+<!-- ============================================================
+     DESIGN SHEETS PAGE
+     ============================================================ -->
+<div class="app-page" id="page-design-sheets" style="display:none">
+  <section class="section">
+    <div class="container">
+
+      <div class="main-header" style="margin-bottom:1.25rem;">
+        <div class="header-title-area">
+          <h1 class="main-title">Design Sheets</h1>
+          <span class="result-count" id="ds-result-count"></span>
+        </div>
+        <span style="font-size:0.72rem; color:var(--sub-color);">interactive calculators — run in your browser</span>
+      </div>
+      <div class="card-grid" id="ds-card-grid"></div>
+
+    </div>
+  </section>
+</div><!-- /page-design-sheets -->
+
+<!-- ============================================================
+     ACADEMIC PAGE
+     ============================================================ -->
+<div class="app-page" id="page-academic" style="display:none">
+  <section class="section">
+    <div class="container">
+
+      <div id="academic-section" style="display:flex; flex-direction:column; flex:1; min-height:0;">
+        <div class="academic-grid" id="academic-grid"></div>
+      </div>
+
+      <!-- PDF Viewer sub-section -->
+      <div id="pdf-viewer-section" style="display:none; flex-direction:column; flex:1; min-height:0;">
+        <div class="pdf-viewer-header">
+          <button class="pdf-back-btn" id="pdf-back-btn">
+            <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M15 8a.5.5 0 00-.5-.5H2.707l3.147-3.146a.5.5 0 10-.708-.708l-4 4a.5.5 0 000 .708l4 4a.5.5 0 00.708-.708L2.707 8.5H14.5A.5.5 0 0015 8z"/></svg>
+            back
+          </button>
+          <div class="pdf-viewer-title-group">
+            <span class="pdf-viewer-title" id="pdf-viewer-title"></span>
+            <span class="pdf-viewer-meta"  id="pdf-viewer-meta"></span>
+          </div>
+          <a class="pdf-download-btn" id="pdf-download-btn" href="#" download>
+            <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path d="M.5 9.9a.5.5 0 01.5.5v2.5a1 1 0 001 1h12a1 1 0 001-1v-2.5a.5.5 0 011 0v2.5a2 2 0 01-2 2H2a2 2 0 01-2-2v-2.5a.5.5 0 01.5-.5z"/><path d="M7.646 11.854a.5.5 0 00.708 0l3-3a.5.5 0 00-.708-.708L8.5 10.293V1.5a.5.5 0 00-1 0v8.793L5.354 8.146a.5.5 0 10-.708.708l3 3z"/></svg>
+            download pdf
+          </a>
+        </div>
+        <iframe id="pdf-iframe" class="pdf-iframe" src="" title="PDF Viewer"></iframe>
+      </div>
+
+    </div>
+  </section>
+</div><!-- /page-academic -->
+
+</main>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer>
+  <div class="footer-inner">
+    <p class="footer-copy">
+      built with <span>♥</span> &amp; <span>⌨</span> — civil engineer &amp; developer
+    </p>
+    <div class="footer-links">
+      <a href="#" data-page="apps">applications</a>
+      <a href="#" data-page="tools">tools</a>
+      <a href="#" data-page="design-sheets">design sheets</a>
+      <a href="#" data-page="academic">academic</a>
+    </div>
+    <div class="footer-social">
+      <a href="https://www.youtube.com/@YouSolveReal" target="_blank" rel="noopener" title="YouTube" onmouseover="this.style.color='#FF0000'" onmouseout="this.style.color=''">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      </a>
+      <a href="https://www.tiktok.com/@yousolvereal" target="_blank" rel="noopener" title="TikTok">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.79 1.54V6.78a4.85 4.85 0 01-1.02-.09z"/></svg>
+      </a>
+      <a href="https://www.instagram.com/yousolvereal" target="_blank" rel="noopener" title="Instagram" onmouseover="this.style.color='#E1306C'" onmouseout="this.style.color=''">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================================
+     DETAIL MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-app-name">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <span class="modal-app-name" id="modal-app-name"></span>
+        <span class="modal-version"  id="modal-version"></span>
+        <span class="modal-category" id="modal-category"></span>
+      </div>
+      <button class="modal-close" id="modal-close" aria-label="Close">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
+          <path d="M2.146 2.854a.5.5 0 11.708-.708L8 7.293l5.146-5.147a.5.5 0 01.708.708L8.707 8l5.147 5.146a.5.5 0 01-.708.708L8 8.707l-5.146 5.147a.5.5 0 01-.708-.708L7.293 8 2.146 2.854z"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-thumb-wrap" id="modal-thumb-wrap"></div>
+
+      <section class="modal-section">
+        <h3 class="modal-section-title">about</h3>
+        <p class="modal-desc" id="modal-desc"></p>
+      </section>
+
+      <section class="modal-section" id="modal-features-section">
+        <h3 class="modal-section-title">key features</h3>
+        <ul class="modal-features" id="modal-features"></ul>
+      </section>
+
+      <section class="modal-section" id="modal-req-section">
+        <h3 class="modal-section-title">system requirements</h3>
+        <p class="modal-req" id="modal-req"></p>
+      </section>
+
+      <div class="modal-meta" id="modal-meta"></div>
+
+      <section class="modal-section" id="modal-rating-section">
+        <h3 class="modal-section-title">community rating</h3>
+        <div id="modal-stars-avg"></div>
+        <div style="margin-top:10px;">
+          <div style="font-size:0.68rem; color:var(--sub-color); margin-bottom:6px;">your rating</div>
+          <div id="modal-stars-interactive"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-footer">
+      <button class="modal-btn-close-action" id="modal-btn-close-action">close</button>
+      <a id="modal-source-btn" href="#" target="_blank" rel="noopener" class="btn-source" style="display:none;">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        source code
+      </a>
+      <span id="modal-download-btn"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     TOOL MODAL
+     ============================================================ -->
+<div class="modal-overlay tool-modal-overlay" id="tool-modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal tool-modal">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <span class="modal-app-name" id="tool-modal-name"></span>
+        <span class="modal-version" id="tool-modal-version"></span>
+        <span class="modal-category cat-Utility" id="tool-modal-category"></span>
+      </div>
+      <button class="modal-close" id="tool-modal-close" aria-label="Close">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
+          <path d="M2.146 2.854a.5.5 0 11.708-.708L8 7.293l5.146-5.147a.5.5 0 01.708.708L8.707 8l5.147 5.146a.5.5 0 01-.708.708L8 8.707l-5.146 5.147a.5.5 0 01-.708-.708L7.293 8 2.146 2.854z"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body tool-modal-body">
+
+      <!-- ── Unit Converter ── -->
+      <div class="tool-content" id="tool-content-unit-converter" style="display:none;">
+        <div class="tool-layout">
+          <div class="tool-panel">
+            <p class="tool-panel-title">// convert</p>
+            <div class="form-group">
+              <label for="uc-category">category</label>
+              <select id="uc-category" class="form-control">
+                <option value="length">Length</option>
+                <option value="area">Area</option>
+                <option value="pressure">Pressure</option>
+                <option value="flow">Flow Rate</option>
+                <option value="force">Force / Load</option>
+                <option value="velocity">Velocity</option>
+                <option value="volume">Volume</option>
+              </select>
+            </div>
+            <div class="converter-grid">
+              <div class="form-group" style="margin:0;">
+                <label for="uc-from-unit">from</label>
+                <select id="uc-from-unit" class="form-control"></select>
+              </div>
+              <button class="swap-btn" id="uc-swap" title="Swap units">⇄</button>
+              <div class="form-group" style="margin:0;">
+                <label for="uc-to-unit">to</label>
+                <select id="uc-to-unit" class="form-control"></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="uc-value">value</label>
+              <input id="uc-value" type="number" class="form-control" placeholder="enter value..." value="1" />
+            </div>
+            <div class="result-box">
+              <div class="result-value" id="uc-result">—</div>
+              <div class="result-label" id="uc-result-label">enter a value above</div>
+            </div>
+          </div>
+          <div class="tool-panel">
+            <p class="tool-panel-title">// reference table</p>
+            <table class="conversion-table">
+              <thead><tr><th>unit</th><th>symbol</th><th>converted</th></tr></thead>
+              <tbody id="uc-table-body">
+                <tr><td colspan="3" style="color:var(--sub-color); font-size:0.75rem;">enter a value to see all conversions</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- /Unit Converter -->
+
+    </div>
+    <div class="modal-footer">
+      <div id="tool-modal-dlcount" style="font-size:0.72rem; color:var(--sub-color);"></div>
+      <button class="modal-btn-close-action" id="tool-modal-close-btn">close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DESIGN SHEET FULL-SCREEN MODAL
+     ============================================================ -->
+<div class="ds-modal-overlay" id="ds-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="ds-modal-name">
+  <div class="ds-modal-dialog">
+    <div class="ds-modal-bar">
+      <div class="ds-modal-title-group">
+        <span class="ds-modal-name" id="ds-modal-name"></span>
+        <span class="ds-modal-ver" id="ds-modal-ver"></span>
+        <span class="ds-modal-cat-badge" id="ds-modal-cat"></span>
+      </div>
+      <button class="ds-modal-close-btn" id="ds-modal-close" aria-label="Close design sheet">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
+          <path d="M2.146 2.854a.5.5 0 11.708-.708L8 7.293l5.146-5.147a.5.5 0 01.708.708L8.707 8l5.147 5.146a.5.5 0 01-.708.708L8 8.707l-5.146 5.147a.5.5 0 01-.708-.708L7.293 8 2.146 2.854z"/>
+        </svg>
+        close
+      </button>
+    </div>
+    <iframe id="ds-frame" class="ds-frame" src="" frameborder="0" title="Design Sheet Calculator"></iframe>
+  </div>
+</div>
+
+<!-- ============================================================
+     THEME PICKER MODAL
+     ============================================================ -->
+<div class="theme-overlay" id="theme-overlay">
+  <div class="theme-modal">
+    <div class="theme-modal-header">
+      <div class="theme-modal-title-group">
+        <div class="theme-modal-title">custom theme</div>
+        <div class="theme-modal-sub">choose a preset or define your own colours</div>
+      </div>
+      <button class="theme-modal-close" id="theme-modal-close">&#x2715;</button>
+    </div>
+    <div class="theme-modal-body">
+
+      <div class="theme-section-label">preset themes <span style="font-size:0.7rem;opacity:0.55;font-weight:400;">(187 from monkeytype)</span></div>
+      <div class="search-wrap" style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.5rem;background:var(--sub-alt-color);border-radius:6px;padding:0.3rem 0.6rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;flex-shrink:0;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="theme-search" placeholder="search themes..." style="background:transparent;border:none;outline:none;color:var(--text-color);font-size:0.72rem;width:100%;font-family:var(--font);" />
+      </div>
+      <div class="theme-presets" id="theme-presets">
+
+        <div class="theme-swatch" data-theme="8008" title="8008" style="background:#333a45;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f44c7f; width:70%;"></div><div class="theme-swatch-bar" style="background:#e9ecf0; width:90%;"></div><div class="theme-swatch-bar" style="background:#939eae; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e9ecf0; text-shadow:none;">8008</span></div>
+        <div class="theme-swatch" data-theme="9009" title="9009" style="background:#eeebe2;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#080909; width:70%;"></div><div class="theme-swatch-bar" style="background:#080909; width:90%;"></div><div class="theme-swatch-bar" style="background:#99947f; width:55%;"></div></div><span class="theme-swatch-name" style="color:#080909; text-shadow:none;">9009</span></div>
+        <div class="theme-swatch" data-theme="80s-after-dark" title="80s after dark" style="background:#1b1d36;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fca6d1; width:70%;"></div><div class="theme-swatch-bar" style="background:#e1e7ec; width:90%;"></div><div class="theme-swatch-bar" style="background:#99d6ea; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e1e7ec; text-shadow:none;">80s after dark</span></div>
+        <div class="theme-swatch" data-theme="aether" title="aether" style="background:#101820;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#eedaea; width:70%;"></div><div class="theme-swatch-bar" style="background:#eedaea; width:90%;"></div><div class="theme-swatch-bar" style="background:#cf6bdd; width:55%;"></div></div><span class="theme-swatch-name" style="color:#eedaea; text-shadow:none;">aether</span></div>
+        <div class="theme-swatch" data-theme="alduin" title="alduin" style="background:#1c1c1c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#dfd7af; width:70%;"></div><div class="theme-swatch-bar" style="background:#f5f3ed; width:90%;"></div><div class="theme-swatch-bar" style="background:#444444; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f5f3ed; text-shadow:none;">alduin</span></div>
+        <div class="theme-swatch" data-theme="alpine" title="alpine" style="background:#6c687f;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ffffff; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#9994b8; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">alpine</span></div>
+        <div class="theme-swatch" data-theme="anti-hero" title="anti hero" style="background:#00002e;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ffadad; width:70%;"></div><div class="theme-swatch-bar" style="background:#f1deef; width:90%;"></div><div class="theme-swatch-bar" style="background:#ff3d8b; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f1deef; text-shadow:none;">anti hero</span></div>
+        <div class="theme-swatch" data-theme="arch" title="arch" style="background:#0c0d11;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#7ebab5; width:70%;"></div><div class="theme-swatch-bar" style="background:#f6f5f5; width:90%;"></div><div class="theme-swatch-bar" style="background:#454864; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f6f5f5; text-shadow:none;">arch</span></div>
+        <div class="theme-swatch" data-theme="aurora" title="aurora" style="background:#011926;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#00e980; width:70%;"></div><div class="theme-swatch-bar" style="background:#fff; width:90%;"></div><div class="theme-swatch-bar" style="background:#245c69; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fff; text-shadow:none;">aurora</span></div>
+        <div class="theme-swatch" data-theme="beach" title="beach" style="background:#ffeead;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#96ceb4; width:70%;"></div><div class="theme-swatch-bar" style="background:#5b7869; width:90%;"></div><div class="theme-swatch-bar" style="background:#ffcc5c; width:55%;"></div></div><span class="theme-swatch-name" style="color:#5b7869; text-shadow:none;">beach</span></div>
+        <div class="theme-swatch" data-theme="bento" title="bento" style="background:#2d394d;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ff7a90; width:70%;"></div><div class="theme-swatch-bar" style="background:#fffaf8; width:90%;"></div><div class="theme-swatch-bar" style="background:#4a768d; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fffaf8; text-shadow:none;">bento</span></div>
+        <div class="theme-swatch" data-theme="bingsu" title="bingsu" style="background:#b8a7aa;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#83616e; width:70%;"></div><div class="theme-swatch-bar" style="background:#ebe6ea; width:90%;"></div><div class="theme-swatch-bar" style="background:#48373d; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ebe6ea; text-shadow:none;">bingsu</span></div>
+        <div class="theme-swatch" data-theme="bliss" title="bliss" style="background:#262727;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f0d3c9; width:70%;"></div><div class="theme-swatch-bar" style="background:#fff; width:90%;"></div><div class="theme-swatch-bar" style="background:#665957; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fff; text-shadow:none;">bliss</span></div>
+        <div class="theme-swatch" data-theme="blue-dolphin" title="blue dolphin" style="background:#003950;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ffcefb; width:70%;"></div><div class="theme-swatch-bar" style="background:#82eaff; width:90%;"></div><div class="theme-swatch-bar" style="background:#00e4ff; width:55%;"></div></div><span class="theme-swatch-name" style="color:#82eaff; text-shadow:none;">blue dolphin</span></div>
+        <div class="theme-swatch" data-theme="blueberry-dark" title="blueberry dark" style="background:#212b42;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#add7ff; width:70%;"></div><div class="theme-swatch-bar" style="background:#91b4d5; width:90%;"></div><div class="theme-swatch-bar" style="background:#5c7da5; width:55%;"></div></div><span class="theme-swatch-name" style="color:#91b4d5; text-shadow:none;">blueberry dark</span></div>
+        <div class="theme-swatch" data-theme="blueberry-light" title="blueberry light" style="background:#dae0f5;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#506477; width:70%;"></div><div class="theme-swatch-bar" style="background:#678198; width:90%;"></div><div class="theme-swatch-bar" style="background:#92a4be; width:55%;"></div></div><span class="theme-swatch-name" style="color:#678198; text-shadow:none;">blueberry light</span></div>
+        <div class="theme-swatch" data-theme="botanical" title="botanical" style="background:#7b9c98;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#eaf1f3; width:70%;"></div><div class="theme-swatch-bar" style="background:#eaf1f3; width:90%;"></div><div class="theme-swatch-bar" style="background:#495755; width:55%;"></div></div><span class="theme-swatch-name" style="color:#eaf1f3; text-shadow:none;">botanical</span></div>
+        <div class="theme-swatch" data-theme="bouquet" title="bouquet" style="background:#173f35;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#eaa09c; width:70%;"></div><div class="theme-swatch-bar" style="background:#e9e0d2; width:90%;"></div><div class="theme-swatch-bar" style="background:#408e7b; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e9e0d2; text-shadow:none;">bouquet</span></div>
+        <div class="theme-swatch" data-theme="breeze" title="breeze" style="background:#e8d5c4;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#7d67a9; width:70%;"></div><div class="theme-swatch-bar" style="background:#1b4c5e; width:90%;"></div><div class="theme-swatch-bar" style="background:#3a98b9; width:55%;"></div></div><span class="theme-swatch-name" style="color:#1b4c5e; text-shadow:none;">breeze</span></div>
+        <div class="theme-swatch" data-theme="bushido" title="bushido" style="background:#242933;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ec4c56; width:70%;"></div><div class="theme-swatch-bar" style="background:#f6f0e9; width:90%;"></div><div class="theme-swatch-bar" style="background:#596172; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f6f0e9; text-shadow:none;">bushido</span></div>
+        <div class="theme-swatch" data-theme="cafe" title="cafe" style="background:#ceb18d;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#14120f; width:70%;"></div><div class="theme-swatch-bar" style="background:#14120f; width:90%;"></div><div class="theme-swatch-bar" style="background:#d4d2d1; width:55%;"></div></div><span class="theme-swatch-name" style="color:#14120f; text-shadow:none;">cafe</span></div>
+        <div class="theme-swatch" data-theme="camping" title="camping" style="background:#faf1e4;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#618c56; width:70%;"></div><div class="theme-swatch-bar" style="background:#3c403b; width:90%;"></div><div class="theme-swatch-bar" style="background:#c2b8aa; width:55%;"></div></div><span class="theme-swatch-name" style="color:#3c403b; text-shadow:none;">camping</span></div>
+        <div class="theme-swatch" data-theme="carbon" title="carbon" style="background:#313131;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f66e0d; width:70%;"></div><div class="theme-swatch-bar" style="background:#f5e6c8; width:90%;"></div><div class="theme-swatch-bar" style="background:#616161; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f5e6c8; text-shadow:none;">carbon</span></div>
+        <div class="theme-swatch" data-theme="catppuccin" title="catppuccin" style="background:#1e1e2e;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#cba6f7; width:70%;"></div><div class="theme-swatch-bar" style="background:#cdd6f4; width:90%;"></div><div class="theme-swatch-bar" style="background:#7f849c; width:55%;"></div></div><span class="theme-swatch-name" style="color:#cdd6f4; text-shadow:none;">catppuccin</span></div>
+        <div class="theme-swatch" data-theme="chaos-theory" title="chaos theory" style="background:#141221;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fd77d7; width:70%;"></div><div class="theme-swatch-bar" style="background:#dde5ed; width:90%;"></div><div class="theme-swatch-bar" style="background:#676e8a; width:55%;"></div></div><span class="theme-swatch-name" style="color:#dde5ed; text-shadow:none;">chaos theory</span></div>
+        <div class="theme-swatch" data-theme="cheesecake" title="cheesecake" style="background:#fdf0d5;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#8e2949; width:70%;"></div><div class="theme-swatch-bar" style="background:#3a3335; width:90%;"></div><div class="theme-swatch-bar" style="background:#d91c81; width:55%;"></div></div><span class="theme-swatch-name" style="color:#3a3335; text-shadow:none;">cheesecake</span></div>
+        <div class="theme-swatch" data-theme="cherry-blossom" title="cherry blossom" style="background:#323437;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#d65ccc; width:70%;"></div><div class="theme-swatch-bar" style="background:#d1d0c5; width:90%;"></div><div class="theme-swatch-bar" style="background:#787d82; width:55%;"></div></div><span class="theme-swatch-name" style="color:#d1d0c5; text-shadow:none;">cherry blossom</span></div>
+        <div class="theme-swatch" data-theme="comfy" title="comfy" style="background:#4a5b6e;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f8cdc6; width:70%;"></div><div class="theme-swatch-bar" style="background:#f5efee; width:90%;"></div><div class="theme-swatch-bar" style="background:#9ec1cc; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f5efee; text-shadow:none;">comfy</span></div>
+        <div class="theme-swatch" data-theme="copper" title="copper" style="background:#442f29;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#b46a55; width:70%;"></div><div class="theme-swatch-bar" style="background:#e7e0de; width:90%;"></div><div class="theme-swatch-bar" style="background:#7ebab5; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e7e0de; text-shadow:none;">copper</span></div>
+        <div class="theme-swatch" data-theme="creamsicle" title="creamsicle" style="background:#ff9869;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fcfcf8; width:70%;"></div><div class="theme-swatch-bar" style="background:#fcfcf8; width:90%;"></div><div class="theme-swatch-bar" style="background:#ff661f; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fcfcf8; text-shadow:none;">creamsicle</span></div>
+        <div class="theme-swatch" data-theme="cy-red" title="cy red" style="background:#6e2626;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e55050; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffaaaa; width:90%;"></div><div class="theme-swatch-bar" style="background:#ff6060; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffaaaa; text-shadow:none;">cy red</span></div>
+        <div class="theme-swatch" data-theme="cyberspace" title="cyberspace" style="background:#181c18;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#00ce7c; width:70%;"></div><div class="theme-swatch-bar" style="background:#c2fbe1; width:90%;"></div><div class="theme-swatch-bar" style="background:#9578d3; width:55%;"></div></div><span class="theme-swatch-name" style="color:#c2fbe1; text-shadow:none;">cyberspace</span></div>
+        <div class="theme-swatch" data-theme="dark" title="dark" style="background:#111;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#eee; width:70%;"></div><div class="theme-swatch-bar" style="background:#eee; width:90%;"></div><div class="theme-swatch-bar" style="background:#444; width:55%;"></div></div><span class="theme-swatch-name" style="color:#eee; text-shadow:none;">dark</span></div>
+        <div class="theme-swatch" data-theme="dark-magic-girl" title="dark magic girl" style="background:#091f2c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f5b1cc; width:70%;"></div><div class="theme-swatch-bar" style="background:#a288d9; width:90%;"></div><div class="theme-swatch-bar" style="background:#93e8d3; width:55%;"></div></div><span class="theme-swatch-name" style="color:#a288d9; text-shadow:none;">dark magic girl</span></div>
+        <div class="theme-swatch" data-theme="dark-note" title="dark note" style="background:#1f1f1f;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f2c17b; width:70%;"></div><div class="theme-swatch-bar" style="background:#d2dff4; width:90%;"></div><div class="theme-swatch-bar" style="background:#768f95; width:55%;"></div></div><span class="theme-swatch-name" style="color:#d2dff4; text-shadow:none;">dark note</span></div>
+        <div class="theme-swatch" data-theme="darling" title="darling" style="background:#fec8cd;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ffffff; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#a30000; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">darling</span></div>
+        <div class="theme-swatch" data-theme="deku" title="deku" style="background:#058b8c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#b63530; width:70%;"></div><div class="theme-swatch-bar" style="background:#f7f2ea; width:90%;"></div><div class="theme-swatch-bar" style="background:#255458; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f7f2ea; text-shadow:none;">deku</span></div>
+        <div class="theme-swatch" data-theme="desert-oasis" title="desert oasis" style="background:#fff2d5;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#d19d01; width:70%;"></div><div class="theme-swatch-bar" style="background:#332800; width:90%;"></div><div class="theme-swatch-bar" style="background:#0061fe; width:55%;"></div></div><span class="theme-swatch-name" style="color:#332800; text-shadow:none;">desert oasis</span></div>
+        <div class="theme-swatch" data-theme="dev" title="dev" style="background:#1b2028;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#23a9d5; width:70%;"></div><div class="theme-swatch-bar" style="background:#ccccb5; width:90%;"></div><div class="theme-swatch-bar" style="background:#4b5975; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ccccb5; text-shadow:none;">dev</span></div>
+        <div class="theme-swatch" data-theme="diner" title="diner" style="background:#537997;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#c3af5b; width:70%;"></div><div class="theme-swatch-bar" style="background:#dfdbc8; width:90%;"></div><div class="theme-swatch-bar" style="background:#445c7f; width:55%;"></div></div><span class="theme-swatch-name" style="color:#dfdbc8; text-shadow:none;">diner</span></div>
+        <div class="theme-swatch" data-theme="dino" title="dino" style="background:#ffffff;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#40d672; width:70%;"></div><div class="theme-swatch-bar" style="background:#1d221f; width:90%;"></div><div class="theme-swatch-bar" style="background:#d5d5d5; width:55%;"></div></div><span class="theme-swatch-name" style="color:#1d221f; text-shadow:none;">dino</span></div>
+        <div class="theme-swatch" data-theme="discord" title="discord" style="background:#313338;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#5a65ea; width:70%;"></div><div class="theme-swatch-bar" style="background:#dcdee3; width:90%;"></div><div class="theme-swatch-bar" style="background:#565861; width:55%;"></div></div><span class="theme-swatch-name" style="color:#dcdee3; text-shadow:none;">discord</span></div>
+        <div class="theme-swatch" data-theme="dmg" title="dmg" style="background:#dadbdc;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ae185e; width:70%;"></div><div class="theme-swatch-bar" style="background:#414141; width:90%;"></div><div class="theme-swatch-bar" style="background:#3846b1; width:55%;"></div></div><span class="theme-swatch-name" style="color:#414141; text-shadow:none;">dmg</span></div>
+        <div class="theme-swatch" data-theme="dollar" title="dollar" style="background:#e4e4d4;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#6b886b; width:70%;"></div><div class="theme-swatch-bar" style="background:#555a56; width:90%;"></div><div class="theme-swatch-bar" style="background:#8a9b69; width:55%;"></div></div><span class="theme-swatch-name" style="color:#555a56; text-shadow:none;">dollar</span></div>
+        <div class="theme-swatch" data-theme="dots" title="dots" style="background:#121520;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fff; width:70%;"></div><div class="theme-swatch-bar" style="background:#fff; width:90%;"></div><div class="theme-swatch-bar" style="background:#676e8a; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fff; text-shadow:none;">dots</span></div>
+        <div class="theme-swatch" data-theme="dracula" title="dracula" style="background:#282a36;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#bd93f9; width:70%;"></div><div class="theme-swatch-bar" style="background:#f8f8f2; width:90%;"></div><div class="theme-swatch-bar" style="background:#6272a4; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f8f8f2; text-shadow:none;">dracula</span></div>
+        <div class="theme-swatch" data-theme="drowning" title="drowning" style="background:#191826;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#4a6fb5; width:70%;"></div><div class="theme-swatch-bar" style="background:#9393a7; width:90%;"></div><div class="theme-swatch-bar" style="background:#50688c; width:55%;"></div></div><span class="theme-swatch-name" style="color:#9393a7; text-shadow:none;">drowning</span></div>
+        <div class="theme-swatch" data-theme="dualshot" title="dualshot" style="background:#737373;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#212222; width:70%;"></div><div class="theme-swatch-bar" style="background:#212222; width:90%;"></div><div class="theme-swatch-bar" style="background:#aaaaaa; width:55%;"></div></div><span class="theme-swatch-name" style="color:#212222; text-shadow:none;">dualshot</span></div>
+        <div class="theme-swatch" data-theme="earthsong" title="earthsong" style="background:#292521;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#509452; width:70%;"></div><div class="theme-swatch-bar" style="background:#e6c7a8; width:90%;"></div><div class="theme-swatch-bar" style="background:#f5ae2d; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e6c7a8; text-shadow:none;">earthsong</span></div>
+        <div class="theme-swatch" data-theme="everblush" title="everblush" style="background:#141b1e;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#8ccf7e; width:70%;"></div><div class="theme-swatch-bar" style="background:#dadada; width:90%;"></div><div class="theme-swatch-bar" style="background:#838887; width:55%;"></div></div><span class="theme-swatch-name" style="color:#dadada; text-shadow:none;">everblush</span></div>
+        <div class="theme-swatch" data-theme="evil-eye" title="evil eye" style="background:#0084c2;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f7f2ea; width:70%;"></div><div class="theme-swatch-bar" style="background:#171718; width:90%;"></div><div class="theme-swatch-bar" style="background:#01589f; width:55%;"></div></div><span class="theme-swatch-name" style="color:#171718; text-shadow:none;">evil eye</span></div>
+        <div class="theme-swatch" data-theme="ez-mode" title="ez mode" style="background:#0068c6;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fa62d5; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#138bf7; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">ez mode</span></div>
+        <div class="theme-swatch" data-theme="fire" title="fire" style="background:#0f0000;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#b31313; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#683434; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">fire</span></div>
+        <div class="theme-swatch" data-theme="fledgling" title="fledgling" style="background:#3b363f;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fc6e83; width:70%;"></div><div class="theme-swatch-bar" style="background:#e6d5d3; width:90%;"></div><div class="theme-swatch-bar" style="background:#8e5568; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e6d5d3; text-shadow:none;">fledgling</span></div>
+        <div class="theme-swatch" data-theme="fleuriste" title="fleuriste" style="background:#c6b294;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#405a52; width:70%;"></div><div class="theme-swatch-bar" style="background:#091914; width:90%;"></div><div class="theme-swatch-bar" style="background:#64374d; width:55%;"></div></div><span class="theme-swatch-name" style="color:#091914; text-shadow:none;">fleuriste</span></div>
+        <div class="theme-swatch" data-theme="floret" title="floret" style="background:#00272c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ffdd6d; width:70%;"></div><div class="theme-swatch-bar" style="background:#e5e5e5; width:90%;"></div><div class="theme-swatch-bar" style="background:#779097; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e5e5e5; text-shadow:none;">floret</span></div>
+        <div class="theme-swatch" data-theme="froyo" title="froyo" style="background:#e1dacb;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#7b7d7d; width:70%;"></div><div class="theme-swatch-bar" style="background:#7b7d7d; width:90%;"></div><div class="theme-swatch-bar" style="background:#b29c5e; width:55%;"></div></div><span class="theme-swatch-name" style="color:#7b7d7d; text-shadow:none;">froyo</span></div>
+        <div class="theme-swatch" data-theme="frozen-llama" title="frozen llama" style="background:#9bf2ea;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#6d44a6; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#b690fd; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">frozen llama</span></div>
+        <div class="theme-swatch" data-theme="fruit-chew" title="fruit chew" style="background:#d6d3d6;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#5c1e5f; width:70%;"></div><div class="theme-swatch-bar" style="background:#282528; width:90%;"></div><div class="theme-swatch-bar" style="background:#b49cb5; width:55%;"></div></div><span class="theme-swatch-name" style="color:#282528; text-shadow:none;">fruit chew</span></div>
+        <div class="theme-swatch" data-theme="fundamentals" title="fundamentals" style="background:#727474;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#7fa482; width:70%;"></div><div class="theme-swatch-bar" style="background:#131313; width:90%;"></div><div class="theme-swatch-bar" style="background:#cac4be; width:55%;"></div></div><span class="theme-swatch-name" style="color:#131313; text-shadow:none;">fundamentals</span></div>
+        <div class="theme-swatch" data-theme="future-funk" title="future funk" style="background:#2e1a47;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f7f2ea; width:70%;"></div><div class="theme-swatch-bar" style="background:#f7f2ea; width:90%;"></div><div class="theme-swatch-bar" style="background:#c18fff; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f7f2ea; text-shadow:none;">future funk</span></div>
+        <div class="theme-swatch" data-theme="github" title="github" style="background:#212830;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#41ce5c; width:70%;"></div><div class="theme-swatch-bar" style="background:#ccdae6; width:90%;"></div><div class="theme-swatch-bar" style="background:#788386; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ccdae6; text-shadow:none;">github</span></div>
+        <div class="theme-swatch" data-theme="godspeed" title="godspeed" style="background:#eae4cf;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#9abbcd; width:70%;"></div><div class="theme-swatch-bar" style="background:#646669; width:90%;"></div><div class="theme-swatch-bar" style="background:#ada998; width:55%;"></div></div><span class="theme-swatch-name" style="color:#646669; text-shadow:none;">godspeed</span></div>
+        <div class="theme-swatch" data-theme="graen" title="graen" style="background:#303c36;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#a59682; width:70%;"></div><div class="theme-swatch-bar" style="background:#a59682; width:90%;"></div><div class="theme-swatch-bar" style="background:#181d1a; width:55%;"></div></div><span class="theme-swatch-name" style="color:#a59682; text-shadow:none;">graen</span></div>
+        <div class="theme-swatch" data-theme="grand-prix" title="grand prix" style="background:#36475c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#c0d036; width:70%;"></div><div class="theme-swatch-bar" style="background:#c1c7d7; width:90%;"></div><div class="theme-swatch-bar" style="background:#5c6c80; width:55%;"></div></div><span class="theme-swatch-name" style="color:#c1c7d7; text-shadow:none;">grand prix</span></div>
+        <div class="theme-swatch" data-theme="grape" title="grape" style="background:#2c003e;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ff8f00; width:70%;"></div><div class="theme-swatch-bar" style="background:#fff; width:90%;"></div><div class="theme-swatch-bar" style="background:#6e225e; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fff; text-shadow:none;">grape</span></div>
+        <div class="theme-swatch" data-theme="gruvbox-dark" title="gruvbox dark" style="background:#282828;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#d79921; width:70%;"></div><div class="theme-swatch-bar" style="background:#ebdbb2; width:90%;"></div><div class="theme-swatch-bar" style="background:#665c54; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ebdbb2; text-shadow:none;">gruvbox dark</span></div>
+        <div class="theme-swatch" data-theme="gruvbox-light" title="gruvbox light" style="background:#fbf1c7;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#689d6a; width:70%;"></div><div class="theme-swatch-bar" style="background:#3c3836; width:90%;"></div><div class="theme-swatch-bar" style="background:#a89984; width:55%;"></div></div><span class="theme-swatch-name" style="color:#3c3836; text-shadow:none;">gruvbox light</span></div>
+        <div class="theme-swatch" data-theme="hammerhead" title="hammerhead" style="background:#030613;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#4fcdb9; width:70%;"></div><div class="theme-swatch-bar" style="background:#e2f1f5; width:90%;"></div><div class="theme-swatch-bar" style="background:#213c53; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e2f1f5; text-shadow:none;">hammerhead</span></div>
+        <div class="theme-swatch" data-theme="hanok" title="hanok" style="background:#d8d2c3;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#513a2a; width:70%;"></div><div class="theme-swatch-bar" style="background:#393b3b; width:90%;"></div><div class="theme-swatch-bar" style="background:#8b6f5c; width:55%;"></div></div><span class="theme-swatch-name" style="color:#393b3b; text-shadow:none;">hanok</span></div>
+        <div class="theme-swatch" data-theme="hedge" title="hedge" style="background:#415e31;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#6a994e; width:70%;"></div><div class="theme-swatch-bar" style="background:#f7f1d6; width:90%;"></div><div class="theme-swatch-bar" style="background:#ede5b4; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f7f1d6; text-shadow:none;">hedge</span></div>
+        <div class="theme-swatch" data-theme="honey" title="honey" style="background:#f2aa00;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fff546; width:70%;"></div><div class="theme-swatch-bar" style="background:#f3eecb; width:90%;"></div><div class="theme-swatch-bar" style="background:#a66b00; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f3eecb; text-shadow:none;">honey</span></div>
+        <div class="theme-swatch" data-theme="horizon" title="horizon" style="background:#1c1e26;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#c4a88a; width:70%;"></div><div class="theme-swatch-bar" style="background:#bbbbbb; width:90%;"></div><div class="theme-swatch-bar" style="background:#db886f; width:55%;"></div></div><span class="theme-swatch-name" style="color:#bbbbbb; text-shadow:none;">horizon</span></div>
+        <div class="theme-swatch" data-theme="husqy" title="husqy" style="background:#000000;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#c58aff; width:70%;"></div><div class="theme-swatch-bar" style="background:#ebd7ff; width:90%;"></div><div class="theme-swatch-bar" style="background:#972fff; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ebd7ff; text-shadow:none;">husqy</span></div>
+        <div class="theme-swatch" data-theme="iceberg-dark" title="iceberg dark" style="background:#161821;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#84a0c6; width:70%;"></div><div class="theme-swatch-bar" style="background:#c6c8d1; width:90%;"></div><div class="theme-swatch-bar" style="background:#595e76; width:55%;"></div></div><span class="theme-swatch-name" style="color:#c6c8d1; text-shadow:none;">iceberg dark</span></div>
+        <div class="theme-swatch" data-theme="iceberg-light" title="iceberg light" style="background:#e8e9ec;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#2d539e; width:70%;"></div><div class="theme-swatch-bar" style="background:#33374c; width:90%;"></div><div class="theme-swatch-bar" style="background:#adb1c4; width:55%;"></div></div><span class="theme-swatch-name" style="color:#33374c; text-shadow:none;">iceberg light</span></div>
+        <div class="theme-swatch" data-theme="incognito" title="incognito" style="background:#0e0e0e;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ff9900; width:70%;"></div><div class="theme-swatch-bar" style="background:#c6c6c6; width:90%;"></div><div class="theme-swatch-bar" style="background:#555555; width:55%;"></div></div><span class="theme-swatch-name" style="color:#c6c6c6; text-shadow:none;">incognito</span></div>
+        <div class="theme-swatch" data-theme="ishtar" title="ishtar" style="background:#202020;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#91170c; width:70%;"></div><div class="theme-swatch-bar" style="background:#fae1c3; width:90%;"></div><div class="theme-swatch-bar" style="background:#847869; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fae1c3; text-shadow:none;">ishtar</span></div>
+        <div class="theme-swatch" data-theme="iv-clover" title="iv clover" style="background:#a0a0a0;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#573e40; width:70%;"></div><div class="theme-swatch-bar" style="background:#3b2d3b; width:90%;"></div><div class="theme-swatch-bar" style="background:#353535; width:55%;"></div></div><span class="theme-swatch-name" style="color:#3b2d3b; text-shadow:none;">iv clover</span></div>
+        <div class="theme-swatch" data-theme="iv-spade" title="iv spade" style="background:#0c0c0c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#b7976a; width:70%;"></div><div class="theme-swatch-bar" style="background:#d3c2c3; width:90%;"></div><div class="theme-swatch-bar" style="background:#404040; width:55%;"></div></div><span class="theme-swatch-name" style="color:#d3c2c3; text-shadow:none;">iv spade</span></div>
+        <div class="theme-swatch" data-theme="joker" title="joker" style="background:#1a0e25;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#99de1e; width:70%;"></div><div class="theme-swatch-bar" style="background:#e9e2f5; width:90%;"></div><div class="theme-swatch-bar" style="background:#7554a3; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e9e2f5; text-shadow:none;">joker</span></div>
+        <div class="theme-swatch" data-theme="laser" title="laser" style="background:#221b44;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#009eaf; width:70%;"></div><div class="theme-swatch-bar" style="background:#dbe7e8; width:90%;"></div><div class="theme-swatch-bar" style="background:#b82356; width:55%;"></div></div><span class="theme-swatch-name" style="color:#dbe7e8; text-shadow:none;">laser</span></div>
+        <div class="theme-swatch" data-theme="lavender" title="lavender" style="background:#ada6c2;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e4e3e9; width:70%;"></div><div class="theme-swatch-bar" style="background:#2f2a41; width:90%;"></div><div class="theme-swatch-bar" style="background:#e4e3e9; width:55%;"></div></div><span class="theme-swatch-name" style="color:#2f2a41; text-shadow:none;">lavender</span></div>
+        <div class="theme-swatch" data-theme="leather" title="leather" style="background:#a86948;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ffe4bc; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffe4bc; width:90%;"></div><div class="theme-swatch-bar" style="background:#81482b; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffe4bc; text-shadow:none;">leather</span></div>
+        <div class="theme-swatch" data-theme="lil-dragon" title="lil dragon" style="background:#ebe1ef;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#8a5bd6; width:70%;"></div><div class="theme-swatch-bar" style="background:#212b43; width:90%;"></div><div class="theme-swatch-bar" style="background:#a28db8; width:55%;"></div></div><span class="theme-swatch-name" style="color:#212b43; text-shadow:none;">lil dragon</span></div>
+        <div class="theme-swatch" data-theme="lilac-mist" title="lilac mist" style="background:#fffbfe;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#b94189; width:70%;"></div><div class="theme-swatch-bar" style="background:#5c2954; width:90%;"></div><div class="theme-swatch-bar" style="background:#e094c2; width:55%;"></div></div><span class="theme-swatch-name" style="color:#5c2954; text-shadow:none;">lilac mist</span></div>
+        <div class="theme-swatch" data-theme="lime" title="lime" style="background:#7c878e;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#93c247; width:70%;"></div><div class="theme-swatch-bar" style="background:#bfcfdc; width:90%;"></div><div class="theme-swatch-bar" style="background:#4b5257; width:55%;"></div></div><span class="theme-swatch-name" style="color:#bfcfdc; text-shadow:none;">lime</span></div>
+        <div class="theme-swatch" data-theme="luna" title="luna" style="background:#221c35;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f67599; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffe3eb; width:90%;"></div><div class="theme-swatch-bar" style="background:#5a3a7e; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffe3eb; text-shadow:none;">luna</span></div>
+        <div class="theme-swatch" data-theme="macroblank" title="macroblank" style="background:#b2d2c8;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#c13117; width:70%;"></div><div class="theme-swatch-bar" style="background:#490909; width:90%;"></div><div class="theme-swatch-bar" style="background:#717977; width:55%;"></div></div><span class="theme-swatch-name" style="color:#490909; text-shadow:none;">macroblank</span></div>
+        <div class="theme-swatch" data-theme="magic-girl" title="magic girl" style="background:#ffffff;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f5b1cc; width:70%;"></div><div class="theme-swatch-bar" style="background:#00ac8c; width:90%;"></div><div class="theme-swatch-bar" style="background:#93e8d3; width:55%;"></div></div><span class="theme-swatch-name" style="color:#00ac8c; text-shadow:none;">magic girl</span></div>
+        <div class="theme-swatch" data-theme="mashu" title="mashu" style="background:#2b2b2c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#76689a; width:70%;"></div><div class="theme-swatch-bar" style="background:#f1e2e4; width:90%;"></div><div class="theme-swatch-bar" style="background:#d8a0a6; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f1e2e4; text-shadow:none;">mashu</span></div>
+        <div class="theme-swatch" data-theme="matcha-moccha" title="matcha moccha" style="background:#523525;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#7ec160; width:70%;"></div><div class="theme-swatch-bar" style="background:#ecddcc; width:90%;"></div><div class="theme-swatch-bar" style="background:#9e6749; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ecddcc; text-shadow:none;">matcha moccha</span></div>
+        <div class="theme-swatch" data-theme="material" title="material" style="background:#263238;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#80cbc4; width:70%;"></div><div class="theme-swatch-bar" style="background:#e6edf3; width:90%;"></div><div class="theme-swatch-bar" style="background:#4c6772; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e6edf3; text-shadow:none;">material</span></div>
+        <div class="theme-swatch" data-theme="matrix" title="matrix" style="background:#000000;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#15ff00; width:70%;"></div><div class="theme-swatch-bar" style="background:#d1ffcd; width:90%;"></div><div class="theme-swatch-bar" style="background:#006500; width:55%;"></div></div><span class="theme-swatch-name" style="color:#d1ffcd; text-shadow:none;">matrix</span></div>
+        <div class="theme-swatch" data-theme="menthol" title="menthol" style="background:#00c18c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ffffff; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#186544; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">menthol</span></div>
+        <div class="theme-swatch" data-theme="metaverse" title="metaverse" style="background:#232323;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#d82934; width:70%;"></div><div class="theme-swatch-bar" style="background:#e8e8e8; width:90%;"></div><div class="theme-swatch-bar" style="background:#5e5e5e; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e8e8e8; text-shadow:none;">metaverse</span></div>
+        <div class="theme-swatch" data-theme="metropolis" title="metropolis" style="background:#0f1f2c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#56c3b7; width:70%;"></div><div class="theme-swatch-bar" style="background:#e4edf1; width:90%;"></div><div class="theme-swatch-bar" style="background:#326984; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e4edf1; text-shadow:none;">metropolis</span></div>
+        <div class="theme-swatch" data-theme="mexican" title="mexican" style="background:#f8ad34;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#b12189; width:70%;"></div><div class="theme-swatch-bar" style="background:#eee; width:90%;"></div><div class="theme-swatch-bar" style="background:#333; width:55%;"></div></div><span class="theme-swatch-name" style="color:#eee; text-shadow:none;">mexican</span></div>
+        <div class="theme-swatch" data-theme="miami" title="miami" style="background:#f35588;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#05dfd7; width:70%;"></div><div class="theme-swatch-bar" style="background:#f0e9ec; width:90%;"></div><div class="theme-swatch-bar" style="background:#94294c; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f0e9ec; text-shadow:none;">miami</span></div>
+        <div class="theme-swatch" data-theme="miami-nights" title="miami nights" style="background:#18181a;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e4609b; width:70%;"></div><div class="theme-swatch-bar" style="background:#fff; width:90%;"></div><div class="theme-swatch-bar" style="background:#47bac0; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fff; text-shadow:none;">miami nights</span></div>
+        <div class="theme-swatch" data-theme="midnight" title="midnight" style="background:#0b0e13;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#60759f; width:70%;"></div><div class="theme-swatch-bar" style="background:#9fadc6; width:90%;"></div><div class="theme-swatch-bar" style="background:#394760; width:55%;"></div></div><span class="theme-swatch-name" style="color:#9fadc6; text-shadow:none;">midnight</span></div>
+        <div class="theme-swatch" data-theme="milkshake" title="milkshake" style="background:#ffffff;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#212b43; width:70%;"></div><div class="theme-swatch-bar" style="background:#212b43; width:90%;"></div><div class="theme-swatch-bar" style="background:#62cfe6; width:55%;"></div></div><span class="theme-swatch-name" style="color:#212b43; text-shadow:none;">milkshake</span></div>
+        <div class="theme-swatch" data-theme="mint" title="mint" style="background:#05385b;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#5cdb95; width:70%;"></div><div class="theme-swatch-bar" style="background:#edf5e1; width:90%;"></div><div class="theme-swatch-bar" style="background:#20688a; width:55%;"></div></div><span class="theme-swatch-name" style="color:#edf5e1; text-shadow:none;">mint</span></div>
+        <div class="theme-swatch" data-theme="mizu" title="mizu" style="background:#afcbdd;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fcfbf6; width:70%;"></div><div class="theme-swatch-bar" style="background:#1a2633; width:90%;"></div><div class="theme-swatch-bar" style="background:#85a5bb; width:55%;"></div></div><span class="theme-swatch-name" style="color:#1a2633; text-shadow:none;">mizu</span></div>
+        <div class="theme-swatch" data-theme="modern-dolch" title="modern dolch" style="background:#2d2e30;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#7eddd3; width:70%;"></div><div class="theme-swatch-bar" style="background:#e3e6eb; width:90%;"></div><div class="theme-swatch-bar" style="background:#54585c; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e3e6eb; text-shadow:none;">modern dolch</span></div>
+        <div class="theme-swatch" data-theme="modern-dolch-light" title="modern dolch light" style="background:#dbdbdb;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#8fd1c3; width:70%;"></div><div class="theme-swatch-bar" style="background:#454545; width:90%;"></div><div class="theme-swatch-bar" style="background:#a3a2a2; width:55%;"></div></div><span class="theme-swatch-name" style="color:#454545; text-shadow:none;">modern dolch light</span></div>
+        <div class="theme-swatch" data-theme="modern-ink" title="modern ink" style="background:#ffffff;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ff360d; width:70%;"></div><div class="theme-swatch-bar" style="background:#000000; width:90%;"></div><div class="theme-swatch-bar" style="background:#b7b7b7; width:55%;"></div></div><span class="theme-swatch-name" style="color:#000000; text-shadow:none;">modern ink</span></div>
+        <div class="theme-swatch" data-theme="monokai" title="monokai" style="background:#272822;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#a6e22e; width:70%;"></div><div class="theme-swatch-bar" style="background:#e2e2dc; width:90%;"></div><div class="theme-swatch-bar" style="background:#e6db74; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e2e2dc; text-shadow:none;">monokai</span></div>
+        <div class="theme-swatch" data-theme="moonlight" title="moonlight" style="background:#191f28;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#c69f68; width:70%;"></div><div class="theme-swatch-bar" style="background:#ccccb5; width:90%;"></div><div class="theme-swatch-bar" style="background:#4b5975; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ccccb5; text-shadow:none;">moonlight</span></div>
+        <div class="theme-swatch" data-theme="mountain" title="mountain" style="background:#0f0f0f;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e7e7e7; width:70%;"></div><div class="theme-swatch-bar" style="background:#e7e7e7; width:90%;"></div><div class="theme-swatch-bar" style="background:#4c4c4c; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e7e7e7; text-shadow:none;">mountain</span></div>
+        <div class="theme-swatch" data-theme="mr-sleeves" title="mr sleeves" style="background:#d1d7da;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#daa99b; width:70%;"></div><div class="theme-swatch-bar" style="background:#1d1d1d; width:90%;"></div><div class="theme-swatch-bar" style="background:#9a9fa1; width:55%;"></div></div><span class="theme-swatch-name" style="color:#1d1d1d; text-shadow:none;">mr sleeves</span></div>
+        <div class="theme-swatch" data-theme="ms-cupcakes" title="ms cupcakes" style="background:#ffffff;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#5ed5f3; width:70%;"></div><div class="theme-swatch-bar" style="background:#0a282f; width:90%;"></div><div class="theme-swatch-bar" style="background:#d64090; width:55%;"></div></div><span class="theme-swatch-name" style="color:#0a282f; text-shadow:none;">ms cupcakes</span></div>
+        <div class="theme-swatch" data-theme="muted" title="muted" style="background:#525252;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#c5b4e3; width:70%;"></div><div class="theme-swatch-bar" style="background:#b1e4e3; width:90%;"></div><div class="theme-swatch-bar" style="background:#939eae; width:55%;"></div></div><span class="theme-swatch-name" style="color:#b1e4e3; text-shadow:none;">muted</span></div>
+        <div class="theme-swatch" data-theme="nautilus" title="nautilus" style="background:#132237;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ebb723; width:70%;"></div><div class="theme-swatch-bar" style="background:#1cbaac; width:90%;"></div><div class="theme-swatch-bar" style="background:#0b4c6c; width:55%;"></div></div><span class="theme-swatch-name" style="color:#1cbaac; text-shadow:none;">nautilus</span></div>
+        <div class="theme-swatch" data-theme="nebula" title="nebula" style="background:#212135;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#be3c88; width:70%;"></div><div class="theme-swatch-bar" style="background:#838686; width:90%;"></div><div class="theme-swatch-bar" style="background:#19b3b8; width:55%;"></div></div><span class="theme-swatch-name" style="color:#838686; text-shadow:none;">nebula</span></div>
+        <div class="theme-swatch" data-theme="night-runner" title="night runner" style="background:#212121;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#feff04; width:70%;"></div><div class="theme-swatch-bar" style="background:#e8e8e8; width:90%;"></div><div class="theme-swatch-bar" style="background:#5c4a9c; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e8e8e8; text-shadow:none;">night runner</span></div>
+        <div class="theme-swatch" data-theme="nord" title="nord" style="background:#242933;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#88c0d0; width:70%;"></div><div class="theme-swatch-bar" style="background:#d8dee9; width:90%;"></div><div class="theme-swatch-bar" style="background:#929aaa; width:55%;"></div></div><span class="theme-swatch-name" style="color:#d8dee9; text-shadow:none;">nord</span></div>
+        <div class="theme-swatch" data-theme="nord-light" title="nord light" style="background:#eceff4;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#8fbcbb; width:70%;"></div><div class="theme-swatch-bar" style="background:#8fbcbb; width:90%;"></div><div class="theme-swatch-bar" style="background:#6a7791; width:55%;"></div></div><span class="theme-swatch-name" style="color:#8fbcbb; text-shadow:none;">nord light</span></div>
+        <div class="theme-swatch" data-theme="norse" title="norse" style="background:#242425;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#2b5f6d; width:70%;"></div><div class="theme-swatch-bar" style="background:#ccc2b1; width:90%;"></div><div class="theme-swatch-bar" style="background:#505b5e; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ccc2b1; text-shadow:none;">norse</span></div>
+        <div class="theme-swatch" data-theme="oblivion" title="oblivion" style="background:#313231;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#a5a096; width:70%;"></div><div class="theme-swatch-bar" style="background:#f7f5f1; width:90%;"></div><div class="theme-swatch-bar" style="background:#5d6263; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f7f5f1; text-shadow:none;">oblivion</span></div>
+        <div class="theme-swatch" data-theme="olive" title="olive" style="background:#e9e5cc;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#92946f; width:70%;"></div><div class="theme-swatch-bar" style="background:#373731; width:90%;"></div><div class="theme-swatch-bar" style="background:#b7b39e; width:55%;"></div></div><span class="theme-swatch-name" style="color:#373731; text-shadow:none;">olive</span></div>
+        <div class="theme-swatch" data-theme="olivia" title="olivia" style="background:#1c1b1d;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#deaf9d; width:70%;"></div><div class="theme-swatch-bar" style="background:#f2efed; width:90%;"></div><div class="theme-swatch-bar" style="background:#4e3e3e; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f2efed; text-shadow:none;">olivia</span></div>
+        <div class="theme-swatch" data-theme="onedark" title="onedark" style="background:#2f343f;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#61afef; width:70%;"></div><div class="theme-swatch-bar" style="background:#98c379; width:90%;"></div><div class="theme-swatch-bar" style="background:#eceff4; width:55%;"></div></div><span class="theme-swatch-name" style="color:#98c379; text-shadow:none;">onedark</span></div>
+        <div class="theme-swatch" data-theme="our-theme" title="our theme" style="background:#ce1226;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fcd116; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#6d0f19; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">our theme</span></div>
+        <div class="theme-swatch" data-theme="pale-nimbus" title="pale nimbus" style="background:#433e4c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#94ffc2; width:70%;"></div><div class="theme-swatch-bar" style="background:#feffdb; width:90%;"></div><div class="theme-swatch-bar" style="background:#ffaca3; width:55%;"></div></div><span class="theme-swatch-name" style="color:#feffdb; text-shadow:none;">pale nimbus</span></div>
+        <div class="theme-swatch" data-theme="paper" title="paper" style="background:#eeeeee;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#444444; width:70%;"></div><div class="theme-swatch-bar" style="background:#444444; width:90%;"></div><div class="theme-swatch-bar" style="background:#b2b2b2; width:55%;"></div></div><span class="theme-swatch-name" style="color:#444444; text-shadow:none;">paper</span></div>
+        <div class="theme-swatch" data-theme="passion-fruit" title="passion fruit" style="background:#7c2142;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f4a3b4; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#9994b8; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">passion fruit</span></div>
+        <div class="theme-swatch" data-theme="pastel" title="pastel" style="background:#e0b2bd;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fbf4b6; width:70%;"></div><div class="theme-swatch-bar" style="background:#6d5c6f; width:90%;"></div><div class="theme-swatch-bar" style="background:#b4e9ff; width:55%;"></div></div><span class="theme-swatch-name" style="color:#6d5c6f; text-shadow:none;">pastel</span></div>
+        <div class="theme-swatch" data-theme="peach-blossom" title="peach blossom" style="background:#292929;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#99b898; width:70%;"></div><div class="theme-swatch-bar" style="background:#fecea8; width:90%;"></div><div class="theme-swatch-bar" style="background:#616161; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fecea8; text-shadow:none;">peach blossom</span></div>
+        <div class="theme-swatch" data-theme="peaches" title="peaches" style="background:#e0d7c1;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#dd7a5f; width:70%;"></div><div class="theme-swatch-bar" style="background:#5f4c41; width:90%;"></div><div class="theme-swatch-bar" style="background:#e7b28e; width:55%;"></div></div><span class="theme-swatch-name" style="color:#5f4c41; text-shadow:none;">peaches</span></div>
+        <div class="theme-swatch" data-theme="phantom" title="phantom" style="background:#001;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#7aa2f7; width:70%;"></div><div class="theme-swatch-bar" style="background:#c0caf5; width:90%;"></div><div class="theme-swatch-bar" style="background:#414868; width:55%;"></div></div><span class="theme-swatch-name" style="color:#c0caf5; text-shadow:none;">phantom</span></div>
+        <div class="theme-swatch" data-theme="pink-lemonade" title="pink lemonade" style="background:#f6d992;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f6a192; width:70%;"></div><div class="theme-swatch-bar" style="background:#fcfcf8; width:90%;"></div><div class="theme-swatch-bar" style="background:#f6b092; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fcfcf8; text-shadow:none;">pink lemonade</span></div>
+        <div class="theme-swatch" data-theme="pulse" title="pulse" style="background:#181818;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#17b8bd; width:70%;"></div><div class="theme-swatch-bar" style="background:#e5f4f4; width:90%;"></div><div class="theme-swatch-bar" style="background:#53565a; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e5f4f4; text-shadow:none;">pulse</span></div>
+        <div class="theme-swatch" data-theme="purpleish" title="purpleish" style="background:#1e1e32;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#7a52cc; width:70%;"></div><div class="theme-swatch-bar" style="background:#a3a3cc; width:90%;"></div><div class="theme-swatch-bar" style="background:#5c5c99; width:55%;"></div></div><span class="theme-swatch-name" style="color:#a3a3cc; text-shadow:none;">purpleish</span></div>
+        <div class="theme-swatch" data-theme="rainbow-trail" title="rainbow trail" style="background:#f5f5f5;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#363636; width:70%;"></div><div class="theme-swatch-bar" style="background:#1f1f1f; width:90%;"></div><div class="theme-swatch-bar" style="background:#4f4f4f; width:55%;"></div></div><span class="theme-swatch-name" style="color:#1f1f1f; text-shadow:none;">rainbow trail</span></div>
+        <div class="theme-swatch" data-theme="red-dragon" title="red dragon" style="background:#1a0b0c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ff3a32; width:70%;"></div><div class="theme-swatch-bar" style="background:#4a4d4e; width:90%;"></div><div class="theme-swatch-bar" style="background:#e2a528; width:55%;"></div></div><span class="theme-swatch-name" style="color:#4a4d4e; text-shadow:none;">red dragon</span></div>
+        <div class="theme-swatch" data-theme="red-samurai" title="red samurai" style="background:#84202c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#c79e6e; width:70%;"></div><div class="theme-swatch-bar" style="background:#e2dad0; width:90%;"></div><div class="theme-swatch-bar" style="background:#55131b; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e2dad0; text-shadow:none;">red samurai</span></div>
+        <div class="theme-swatch" data-theme="repose-dark" title="repose dark" style="background:#2f3338;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#d6d2bc; width:70%;"></div><div class="theme-swatch-bar" style="background:#d6d2bc; width:90%;"></div><div class="theme-swatch-bar" style="background:#8f8e84; width:55%;"></div></div><span class="theme-swatch-name" style="color:#d6d2bc; text-shadow:none;">repose dark</span></div>
+        <div class="theme-swatch" data-theme="repose-light" title="repose light" style="background:#efead0;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#5f605e; width:70%;"></div><div class="theme-swatch-bar" style="background:#333538; width:90%;"></div><div class="theme-swatch-bar" style="background:#8f8e84; width:55%;"></div></div><span class="theme-swatch-name" style="color:#333538; text-shadow:none;">repose light</span></div>
+        <div class="theme-swatch" data-theme="retro" title="retro" style="background:#dad3c1;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#1d1b17; width:70%;"></div><div class="theme-swatch-bar" style="background:#1d1b17; width:90%;"></div><div class="theme-swatch-bar" style="background:#918b7d; width:55%;"></div></div><span class="theme-swatch-name" style="color:#1d1b17; text-shadow:none;">retro</span></div>
+        <div class="theme-swatch" data-theme="retrocast" title="retrocast" style="background:#07737a;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#88dbdf; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#f3e03b; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">retrocast</span></div>
+        <div class="theme-swatch" data-theme="rgb" title="rgb" style="background:#111;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#eee; width:70%;"></div><div class="theme-swatch-bar" style="background:#eee; width:90%;"></div><div class="theme-swatch-bar" style="background:#444; width:55%;"></div></div><span class="theme-swatch-name" style="color:#eee; text-shadow:none;">rgb</span></div>
+        <div class="theme-swatch" data-theme="rose-pine" title="rose pine" style="background:#1f1d27;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#9ccfd8; width:70%;"></div><div class="theme-swatch-bar" style="background:#e0def4; width:90%;"></div><div class="theme-swatch-bar" style="background:#c4a7e7; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e0def4; text-shadow:none;">rose pine</span></div>
+        <div class="theme-swatch" data-theme="rose-pine-dawn" title="rose pine dawn" style="background:#fffaf3;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#56949f; width:70%;"></div><div class="theme-swatch-bar" style="background:#286983; width:90%;"></div><div class="theme-swatch-bar" style="background:#c4a7e7; width:55%;"></div></div><span class="theme-swatch-name" style="color:#286983; text-shadow:none;">rose pine dawn</span></div>
+        <div class="theme-swatch" data-theme="rose-pine-moon" title="rose pine moon" style="background:#2a273f;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#9ccfd8; width:70%;"></div><div class="theme-swatch-bar" style="background:#e0def4; width:90%;"></div><div class="theme-swatch-bar" style="background:#c4a7e7; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e0def4; text-shadow:none;">rose pine moon</span></div>
+        <div class="theme-swatch" data-theme="rudy" title="rudy" style="background:#1a2b3e;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#af8f5c; width:70%;"></div><div class="theme-swatch-bar" style="background:#c9c8bf; width:90%;"></div><div class="theme-swatch-bar" style="background:#3a506c; width:55%;"></div></div><span class="theme-swatch-name" style="color:#c9c8bf; text-shadow:none;">rudy</span></div>
+        <div class="theme-swatch" data-theme="ryujinscales" title="ryujinscales" style="background:#081426;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f17754; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffe4bc; width:90%;"></div><div class="theme-swatch-bar" style="background:#ffbc90; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffe4bc; text-shadow:none;">ryujinscales</span></div>
+        <div class="theme-swatch" data-theme="serika" title="serika" style="background:#e1e1e3;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e2b714; width:70%;"></div><div class="theme-swatch-bar" style="background:#323437; width:90%;"></div><div class="theme-swatch-bar" style="background:#aaaeb3; width:55%;"></div></div><span class="theme-swatch-name" style="color:#323437; text-shadow:none;">serika</span></div>
+        <div class="theme-swatch" data-theme="serika-dark" title="serika dark" style="background:#323437;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e2b714; width:70%;"></div><div class="theme-swatch-bar" style="background:#d1d0c5; width:90%;"></div><div class="theme-swatch-bar" style="background:#646669; width:55%;"></div></div><span class="theme-swatch-name" style="color:#d1d0c5; text-shadow:none;">serika dark</span></div>
+        <div class="theme-swatch" data-theme="sewing-tin" title="sewing tin" style="background:#241963;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f2ce83; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#446ad5; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">sewing tin</span></div>
+        <div class="theme-swatch" data-theme="sewing-tin-light" title="sewing tin light" style="background:#ffffff;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#2d2076; width:70%;"></div><div class="theme-swatch-bar" style="background:#2d2076; width:90%;"></div><div class="theme-swatch-bar" style="background:#385eca; width:55%;"></div></div><span class="theme-swatch-name" style="color:#2d2076; text-shadow:none;">sewing tin light</span></div>
+        <div class="theme-swatch" data-theme="shadow" title="shadow" style="background:#000;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#eee; width:70%;"></div><div class="theme-swatch-bar" style="background:#eee; width:90%;"></div><div class="theme-swatch-bar" style="background:#444; width:55%;"></div></div><span class="theme-swatch-name" style="color:#eee; text-shadow:none;">shadow</span></div>
+        <div class="theme-swatch" data-theme="shoko" title="shoko" style="background:#ced7e0;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#81c4dd; width:70%;"></div><div class="theme-swatch-bar" style="background:#3b4c58; width:90%;"></div><div class="theme-swatch-bar" style="background:#7599b1; width:55%;"></div></div><span class="theme-swatch-name" style="color:#3b4c58; text-shadow:none;">shoko</span></div>
+        <div class="theme-swatch" data-theme="slambook" title="slambook" style="background:#fffdde;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#03001c; width:70%;"></div><div class="theme-swatch-bar" style="background:#13005a; width:90%;"></div><div class="theme-swatch-bar" style="background:#1c82adc4; width:55%;"></div></div><span class="theme-swatch-name" style="color:#13005a; text-shadow:none;">slambook</span></div>
+        <div class="theme-swatch" data-theme="snes" title="snes" style="background:#bfbec2;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#553d94; width:70%;"></div><div class="theme-swatch-bar" style="background:#2e2e2e; width:90%;"></div><div class="theme-swatch-bar" style="background:#9f8ad4; width:55%;"></div></div><span class="theme-swatch-name" style="color:#2e2e2e; text-shadow:none;">snes</span></div>
+        <div class="theme-swatch" data-theme="soaring-skies" title="soaring skies" style="background:#fff9f2;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#55c6f0; width:70%;"></div><div class="theme-swatch-bar" style="background:#1d1e1e; width:90%;"></div><div class="theme-swatch-bar" style="background:#1e107a; width:55%;"></div></div><span class="theme-swatch-name" style="color:#1d1e1e; text-shadow:none;">soaring skies</span></div>
+        <div class="theme-swatch" data-theme="solarized-dark" title="solarized dark" style="background:#002b36;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#859900; width:70%;"></div><div class="theme-swatch-bar" style="background:#268bd2; width:90%;"></div><div class="theme-swatch-bar" style="background:#2aa198; width:55%;"></div></div><span class="theme-swatch-name" style="color:#268bd2; text-shadow:none;">solarized dark</span></div>
+        <div class="theme-swatch" data-theme="solarized-light" title="solarized light" style="background:#fdf6e3;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#859900; width:70%;"></div><div class="theme-swatch-bar" style="background:#181819; width:90%;"></div><div class="theme-swatch-bar" style="background:#2aa198; width:55%;"></div></div><span class="theme-swatch-name" style="color:#181819; text-shadow:none;">solarized light</span></div>
+        <div class="theme-swatch" data-theme="solarized-osaka" title="solarized osaka" style="background:#00141a;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#859900; width:70%;"></div><div class="theme-swatch-bar" style="background:#eee8d5; width:90%;"></div><div class="theme-swatch-bar" style="background:#2aa198; width:55%;"></div></div><span class="theme-swatch-name" style="color:#eee8d5; text-shadow:none;">solarized osaka</span></div>
+        <div class="theme-swatch" data-theme="sonokai" title="sonokai" style="background:#2c2e34;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#9ed072; width:70%;"></div><div class="theme-swatch-bar" style="background:#e2e2e3; width:90%;"></div><div class="theme-swatch-bar" style="background:#e7c664; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e2e2e3; text-shadow:none;">sonokai</span></div>
+        <div class="theme-swatch" data-theme="spiderman" title="spiderman" style="background:#0d1219;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e23636; width:70%;"></div><div class="theme-swatch-bar" style="background:#f0f0f0; width:90%;"></div><div class="theme-swatch-bar" style="background:#0476f2; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f0f0f0; text-shadow:none;">spiderman</span></div>
+        <div class="theme-swatch" data-theme="stealth" title="stealth" style="background:#010203;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#383e42; width:70%;"></div><div class="theme-swatch-bar" style="background:#383e42; width:90%;"></div><div class="theme-swatch-bar" style="background:#5e676e; width:55%;"></div></div><span class="theme-swatch-name" style="color:#383e42; text-shadow:none;">stealth</span></div>
+        <div class="theme-swatch" data-theme="strawberry" title="strawberry" style="background:#f37f83;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fcfcf8; width:70%;"></div><div class="theme-swatch-bar" style="background:#fcfcf8; width:90%;"></div><div class="theme-swatch-bar" style="background:#e53c58; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fcfcf8; text-shadow:none;">strawberry</span></div>
+        <div class="theme-swatch" data-theme="striker" title="striker" style="background:#124883;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#d7dcda; width:70%;"></div><div class="theme-swatch-bar" style="background:#d6dbd9; width:90%;"></div><div class="theme-swatch-bar" style="background:#0f2d4e; width:55%;"></div></div><span class="theme-swatch-name" style="color:#d6dbd9; text-shadow:none;">striker</span></div>
+        <div class="theme-swatch" data-theme="suisei" title="suisei" style="background:#3b4a62;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#bef0ff; width:70%;"></div><div class="theme-swatch-bar" style="background:#dbdeeb; width:90%;"></div><div class="theme-swatch-bar" style="background:#fe9841; width:55%;"></div></div><span class="theme-swatch-name" style="color:#dbdeeb; text-shadow:none;">suisei</span></div>
+        <div class="theme-swatch" data-theme="sunset" title="sunset" style="background:#211e24;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f79777; width:70%;"></div><div class="theme-swatch-bar" style="background:#f4e0c9; width:90%;"></div><div class="theme-swatch-bar" style="background:#5b578e; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f4e0c9; text-shadow:none;">sunset</span></div>
+        <div class="theme-swatch" data-theme="superuser" title="superuser" style="background:#262a33;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#43ffaf; width:70%;"></div><div class="theme-swatch-bar" style="background:#e5f7ef; width:90%;"></div><div class="theme-swatch-bar" style="background:#526777; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e5f7ef; text-shadow:none;">superuser</span></div>
+        <div class="theme-swatch" data-theme="sweden" title="sweden" style="background:#0058a3;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ffcc02; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#57abdb; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">sweden</span></div>
+        <div class="theme-swatch" data-theme="tangerine" title="tangerine" style="background:#ffede0;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fe5503; width:70%;"></div><div class="theme-swatch-bar" style="background:#3d1705; width:90%;"></div><div class="theme-swatch-bar" style="background:#ff9562; width:55%;"></div></div><span class="theme-swatch-name" style="color:#3d1705; text-shadow:none;">tangerine</span></div>
+        <div class="theme-swatch" data-theme="taro" title="taro" style="background:#b3baff;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#130f1a; width:70%;"></div><div class="theme-swatch-bar" style="background:#130f1a; width:90%;"></div><div class="theme-swatch-bar" style="background:#6f6c91; width:55%;"></div></div><span class="theme-swatch-name" style="color:#130f1a; text-shadow:none;">taro</span></div>
+        <div class="theme-swatch" data-theme="terminal" title="terminal" style="background:#191a1b;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#79a617; width:70%;"></div><div class="theme-swatch-bar" style="background:#e7eae0; width:90%;"></div><div class="theme-swatch-bar" style="background:#48494b; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e7eae0; text-shadow:none;">terminal</span></div>
+        <div class="theme-swatch" data-theme="terra" title="terra" style="background:#0c100e;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#89c559; width:70%;"></div><div class="theme-swatch-bar" style="background:#f0edd1; width:90%;"></div><div class="theme-swatch-bar" style="background:#436029; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f0edd1; text-shadow:none;">terra</span></div>
+        <div class="theme-swatch" data-theme="terrazzo" title="terrazzo" style="background:#f1e5da;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e0794e; width:70%;"></div><div class="theme-swatch-bar" style="background:#023e3b; width:90%;"></div><div class="theme-swatch-bar" style="background:#688e8f; width:55%;"></div></div><span class="theme-swatch-name" style="color:#023e3b; text-shadow:none;">terrazzo</span></div>
+        <div class="theme-swatch" data-theme="terror-below" title="terror below" style="background:#0b1e1a;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#66ac92; width:70%;"></div><div class="theme-swatch-bar" style="background:#dceae5; width:90%;"></div><div class="theme-swatch-bar" style="background:#015c53; width:55%;"></div></div><span class="theme-swatch-name" style="color:#dceae5; text-shadow:none;">terror below</span></div>
+        <div class="theme-swatch" data-theme="tiramisu" title="tiramisu" style="background:#cfc6b9;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#c0976f; width:70%;"></div><div class="theme-swatch-bar" style="background:#7d5448; width:90%;"></div><div class="theme-swatch-bar" style="background:#c0976f; width:55%;"></div></div><span class="theme-swatch-name" style="color:#7d5448; text-shadow:none;">tiramisu</span></div>
+        <div class="theme-swatch" data-theme="trackday" title="trackday" style="background:#464d66;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e0513e; width:70%;"></div><div class="theme-swatch-bar" style="background:#cfcfcf; width:90%;"></div><div class="theme-swatch-bar" style="background:#5c7eb9; width:55%;"></div></div><span class="theme-swatch-name" style="color:#cfcfcf; text-shadow:none;">trackday</span></div>
+        <div class="theme-swatch" data-theme="trance" title="trance" style="background:#00021b;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e51376; width:70%;"></div><div class="theme-swatch-bar" style="background:#fff; width:90%;"></div><div class="theme-swatch-bar" style="background:#3c4c79; width:55%;"></div></div><span class="theme-swatch-name" style="color:#fff; text-shadow:none;">trance</span></div>
+        <div class="theme-swatch" data-theme="tron-orange" title="tron orange" style="background:#0d1c1c;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#f0e800; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#ff6600; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">tron orange</span></div>
+        <div class="theme-swatch" data-theme="vaporwave" title="vaporwave" style="background:#a4a7ea;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e368da; width:70%;"></div><div class="theme-swatch-bar" style="background:#f1ebf1; width:90%;"></div><div class="theme-swatch-bar" style="background:#7c7faf; width:55%;"></div></div><span class="theme-swatch-name" style="color:#f1ebf1; text-shadow:none;">vaporwave</span></div>
+        <div class="theme-swatch" data-theme="vesper" title="vesper" style="background:#101010;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#ffc799; width:70%;"></div><div class="theme-swatch-bar" style="background:#ffffff; width:90%;"></div><div class="theme-swatch-bar" style="background:#a0a0a0; width:55%;"></div></div><span class="theme-swatch-name" style="color:#ffffff; text-shadow:none;">vesper</span></div>
+        <div class="theme-swatch" data-theme="vesper-light" title="vesper light" style="background:#ffffff;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#fb7100; width:70%;"></div><div class="theme-swatch-bar" style="background:#000000; width:90%;"></div><div class="theme-swatch-bar" style="background:#a0a0a0; width:55%;"></div></div><span class="theme-swatch-name" style="color:#000000; text-shadow:none;">vesper light</span></div>
+        <div class="theme-swatch" data-theme="viridescent" title="viridescent" style="background:#2c3333;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#95d5b2; width:70%;"></div><div class="theme-swatch-bar" style="background:#e9f5db; width:90%;"></div><div class="theme-swatch-bar" style="background:#84a98c; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e9f5db; text-shadow:none;">viridescent</span></div>
+        <div class="theme-swatch" data-theme="voc" title="voc" style="background:#190618;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#e0caac; width:70%;"></div><div class="theme-swatch-bar" style="background:#eeeae4; width:90%;"></div><div class="theme-swatch-bar" style="background:#4c1e48; width:55%;"></div></div><span class="theme-swatch-name" style="color:#eeeae4; text-shadow:none;">voc</span></div>
+        <div class="theme-swatch" data-theme="vscode" title="vscode" style="background:#1e1e1e;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#007acc; width:70%;"></div><div class="theme-swatch-bar" style="background:#d4d4d4; width:90%;"></div><div class="theme-swatch-bar" style="background:#4d4d4d; width:55%;"></div></div><span class="theme-swatch-name" style="color:#d4d4d4; text-shadow:none;">vscode</span></div>
+        <div class="theme-swatch" data-theme="watermelon" title="watermelon" style="background:#1f4437;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#d6686f; width:70%;"></div><div class="theme-swatch-bar" style="background:#cdc6bc; width:90%;"></div><div class="theme-swatch-bar" style="background:#3e7a65; width:55%;"></div></div><span class="theme-swatch-name" style="color:#cdc6bc; text-shadow:none;">watermelon</span></div>
+        <div class="theme-swatch" data-theme="wavez" title="wavez" style="background:#1c292f;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#6bde3b; width:70%;"></div><div class="theme-swatch-bar" style="background:#e9efe6; width:90%;"></div><div class="theme-swatch-bar" style="background:#1f5e6b; width:55%;"></div></div><span class="theme-swatch-name" style="color:#e9efe6; text-shadow:none;">wavez</span></div>
+        <div class="theme-swatch" data-theme="witch-girl" title="witch girl" style="background:#f3dbda;"><div class="theme-swatch-inner"><div class="theme-swatch-bar" style="background:#56786a; width:70%;"></div><div class="theme-swatch-bar" style="background:#56786a; width:90%;"></div><div class="theme-swatch-bar" style="background:#ddb4a7; width:55%;"></div></div><span class="theme-swatch-name" style="color:#56786a; text-shadow:none;">witch girl</span></div>
+
+      </div><!-- /theme-presets -->
+
+      <div class="theme-section-label">custom colours</div>
+      <div class="custom-colors-grid" id="custom-colors-grid">
+
+        <div class="color-picker-item" onclick="document.getElementById('cp-bg').click()">
+          <div class="color-picker-swatch" id="swatch-bg">
+            <input type="color" id="cp-bg" value="#323437" data-var="--bg-color" />
+          </div>
+          <div class="color-picker-info">
+            <span class="color-picker-label">background</span>
+            <span class="color-picker-value" id="cv-bg">#323437</span>
+          </div>
+        </div>
+
+        <div class="color-picker-item" onclick="document.getElementById('cp-sub-alt').click()">
+          <div class="color-picker-swatch" id="swatch-sub-alt">
+            <input type="color" id="cp-sub-alt" value="#2c2e31" data-var="--sub-alt-color" />
+          </div>
+          <div class="color-picker-info">
+            <span class="color-picker-label">sub alt</span>
+            <span class="color-picker-value" id="cv-sub-alt">#2c2e31</span>
+          </div>
+        </div>
+
+        <div class="color-picker-item" onclick="document.getElementById('cp-main').click()">
+          <div class="color-picker-swatch" id="swatch-main">
+            <input type="color" id="cp-main" value="#e2b714" data-var="--main-color" />
+          </div>
+          <div class="color-picker-info">
+            <span class="color-picker-label">accent / caret</span>
+            <span class="color-picker-value" id="cv-main">#e2b714</span>
+          </div>
+        </div>
+
+        <div class="color-picker-item" onclick="document.getElementById('cp-text').click()">
+          <div class="color-picker-swatch" id="swatch-text">
+            <input type="color" id="cp-text" value="#d1d0c5" data-var="--text-color" />
+          </div>
+          <div class="color-picker-info">
+            <span class="color-picker-label">text</span>
+            <span class="color-picker-value" id="cv-text">#d1d0c5</span>
+          </div>
+        </div>
+
+        <div class="color-picker-item" onclick="document.getElementById('cp-sub').click()">
+          <div class="color-picker-swatch" id="swatch-sub">
+            <input type="color" id="cp-sub" value="#646669" data-var="--sub-color" />
+          </div>
+          <div class="color-picker-info">
+            <span class="color-picker-label">sub / muted</span>
+            <span class="color-picker-value" id="cv-sub">#646669</span>
+          </div>
+        </div>
+
+        <div class="color-picker-item" onclick="document.getElementById('cp-error').click()">
+          <div class="color-picker-swatch" id="swatch-error">
+            <input type="color" id="cp-error" value="#ca4754" data-var="--error-color" />
+          </div>
+          <div class="color-picker-info">
+            <span class="color-picker-label">error</span>
+            <span class="color-picker-value" id="cv-error">#ca4754</span>
+          </div>
+        </div>
+
+      </div><!-- /custom-colors-grid -->
+
+      <!-- Live preview -->
+      <div class="theme-section-label">preview</div>
+      <div class="theme-preview" id="theme-preview">
+        <div class="preview-row">
+          <span class="preview-label">bg</span>
+          <div class="preview-dot"  style="background:var(--sub-alt-color); border:1px solid var(--border-color);"></div>
+          <div class="preview-bar"  style="background:var(--sub-alt-color); border:1px solid var(--border-color);"></div>
+        </div>
+        <div class="preview-row">
+          <span class="preview-label">main</span>
+          <div class="preview-dot"  style="background:var(--main-color);"></div>
+          <div class="preview-bar"  style="background:var(--main-color); width:45%;"></div>
+        </div>
+        <div class="preview-row">
+          <span class="preview-label">text</span>
+          <div class="preview-dot"  style="background:var(--text-color);"></div>
+          <div class="preview-bar"  style="background:var(--text-color); width:75%;"></div>
+        </div>
+        <div class="preview-row">
+          <span class="preview-label">sub</span>
+          <div class="preview-dot"  style="background:var(--sub-color);"></div>
+          <div class="preview-bar"  style="background:var(--sub-color); width:60%;"></div>
+        </div>
+      </div>
+
+      <button class="theme-reset-btn" id="theme-reset-btn">reset to default</button>
+
+    </div><!-- /theme-modal-body -->
+  </div>
+</div>
+
+<!-- ============================================================
+     AUTH MODAL — restyled with MonkeyType theme
+     ============================================================ -->
+<div id="auth-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:1rem;">
+  <div class="mt-modal-box">
+    <button id="auth-close" class="mt-modal-close">&#x2715;</button>
+    <h2 class="mt-modal-title">access required</h2>
+    <p class="mt-modal-sub">sign in or register to download apps.</p>
+
+    <div class="auth-tabs-row">
+      <button id="tab-login"    class="auth-tab auth-tab-active" onclick="authSwitchTab('login')">sign in</button>
+      <button id="tab-register" class="auth-tab"                 onclick="authSwitchTab('register')">register</button>
+    </div>
+
+    <!-- Login form -->
+    <form id="form-login" onsubmit="authLogin(event)">
+      <label class="mt-field-label">email</label>
+      <input id="login-email" type="email" required placeholder="you@example.com" class="mt-input" />
+      <label class="mt-field-label">password</label>
+      <input id="login-password" type="password" required placeholder="password" class="mt-input" />
+      <div id="login-error"   class="mt-msg-error"></div>
+      <div id="login-success" class="mt-msg-success"></div>
+      <button type="submit" id="login-btn" class="mt-submit-btn">sign in</button>
+      <div style="text-align:center; margin-top:0.75rem;">
+        <button type="button" onclick="authForgotPassword()" class="mt-link-btn">forgot password?</button>
+      </div>
+    </form>
+
+    <!-- Register form -->
+    <form id="form-register" style="display:none;" onsubmit="authRegister(event)">
+      <label class="mt-field-label">name</label>
+      <input id="reg-name"     type="text"     required placeholder="your name"        class="mt-input" />
+      <label class="mt-field-label">email</label>
+      <input id="reg-email"    type="email"    required placeholder="you@example.com"  class="mt-input" />
+      <label class="mt-field-label">password</label>
+      <input id="reg-password" type="password" required placeholder="min. 6 characters" class="mt-input" />
+      <div id="reg-error" class="mt-msg-error"></div>
+      <button type="submit" id="reg-btn" class="mt-submit-btn">create account</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     FEEDBACK MODAL
+     ============================================================ -->
+<div id="feedback-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9998; align-items:center; justify-content:center; padding:1rem;">
+  <div class="mt-modal-box" style="width:440px;">
+    <button id="feedback-close" class="mt-modal-close">&#x2715;</button>
+    <h2 class="mt-modal-title">contact us</h2>
+    <p class="mt-modal-sub">send feedback or report a problem.</p>
+
+    <div class="auth-tabs-row">
+      <button class="auth-tab auth-tab-active" id="ftab-feedback" onclick="fbSwitchTab('feedback')">feedback</button>
+      <button class="auth-tab"                 id="ftab-report"   onclick="fbSwitchTab('report')">report problem</button>
+    </div>
+
+    <div id="fb-shared">
+      <label class="mt-field-label">your name</label>
+      <input id="fb-name"  type="text"  placeholder="name"            class="mt-input" />
+      <label class="mt-field-label">your email</label>
+      <input id="fb-email" type="email" placeholder="your@email.com"  class="mt-input" />
+    </div>
+
+    <form id="form-feedback" onsubmit="fbSubmit(event,'feedback')">
+      <label class="mt-field-label">message</label>
+      <textarea id="fb-message" rows="4" required placeholder="share your thoughts, suggestions…" class="mt-textarea"></textarea>
+      <div id="fb-error"   class="mt-msg-error"></div>
+      <div id="fb-success" class="mt-msg-success"></div>
+      <button type="submit" id="fb-btn" class="mt-submit-btn">send feedback</button>
+    </form>
+
+    <form id="form-report" style="display:none;" onsubmit="fbSubmit(event,'report')">
+      <label class="mt-field-label">related app (optional)</label>
+      <select id="fb-app" class="mt-select">
+        <option value="">— select app —</option>
+      </select>
+      <label class="mt-field-label">describe the problem</label>
+      <textarea id="fb-report-msg" rows="4" required placeholder="what went wrong? what did you expect?" class="mt-textarea"></textarea>
+      <div id="rp-error"   class="mt-msg-error"></div>
+      <div id="rp-success" class="mt-msg-success"></div>
+      <button type="submit" id="rp-btn" class="mt-submit-btn danger">submit report</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     SPREADSHEET REQUEST MODAL
+     ============================================================ -->
+<div id="spreadsheet-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:1rem;">
+  <div class="mt-modal-box" style="width:460px;">
+    <button onclick="hideSpreadsheetRequest()" class="mt-modal-close">&#x2715;</button>
+    <h2 class="mt-modal-title">request psha spreadsheet</h2>
+    <p class="mt-modal-sub">fill in your details and i'll send the vba-based psha spreadsheet to your email.</p>
+
+    <form id="form-spreadsheet-req" onsubmit="submitSpreadsheetRequest(event)">
+      <label class="mt-field-label">full name <span style="color:var(--error-color);">*</span></label>
+      <input id="sr-name"        type="text"  required placeholder="your name"            class="mt-input" />
+      <label class="mt-field-label">email address <span style="color:var(--error-color);">*</span></label>
+      <input id="sr-email"       type="email" required placeholder="you@example.com"      class="mt-input" />
+      <label class="mt-field-label">institution / affiliation</label>
+      <input id="sr-institution" type="text"           placeholder="university or organisation" class="mt-input" />
+      <label class="mt-field-label">purpose of use <span style="color:var(--error-color);">*</span></label>
+      <textarea id="sr-purpose" rows="3" required placeholder="briefly describe how you plan to use the spreadsheet…" class="mt-textarea"></textarea>
+      <div id="sr-error"   class="mt-msg-error"></div>
+      <div id="sr-success" class="mt-msg-success"></div>
+      <button type="submit" id="sr-btn" class="mt-submit-btn">send request</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     FLOATING FEEDBACK BUTTON + HINT
+     ============================================================ -->
+<button id="btn-feedback" title="Send feedback or report a problem"
+        style="position:fixed; bottom:24px; right:24px; z-index:8888; padding:10px 18px; cursor:pointer; display:flex; align-items:center; gap:8px;">
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2.678 11.894a1 1 0 01.287.801 10.97 10.97 0 01-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 01.71-.074A8.06 8.06 0 008 14c3.996 0 7-2.807 7-6 0-3.192-3.004-6-7-6S1 4.808 1 8c0 1.468.617 2.83 1.678 3.894zm-.493 3.905a21.682 21.682 0 01-.713.129c-.2.032-.352-.176-.273-.362a9.68 9.68 0 00.244-.637l.003-.01c.248-.72.45-1.548.524-2.319C.743 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7-3.582 7-8 7a9.06 9.06 0 01-2.347-.306c-.52.263-1.639.742-3.468 1.105z"/></svg>
+  feedback
+</button>
+
+<div id="fb-hint" style="display:none; position:fixed; bottom:80px; right:24px; z-index:8887; padding:10px 14px; font-size:12px; border-radius:10px; max-width:200px; box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+  💬 found a bug or have a suggestion?<br>
+  <strong>click here to let us know!</strong>
+  <div style="text-align:right; margin-top:6px;">
+    <button onclick="fbDismissHint()" class="mt-link-btn" style="font-size:11px;">got it</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script src="ratings.js"></script>
+<script src="feedback.js"></script>
+<script src="app.js"></script>
+
+<!-- ============================================================
+     INLINE SCRIPTS — theme, navbar, typewriter, unit converter,
+                      auth button wiring, filter pills sync
+     ============================================================ -->
+<script>
+/* ── Theme system ─────────────────────────────────────────── */
+(function() {
+  const ROOT = document.documentElement;
+
+  // Monkeytype preset colour maps
+  const THEMES = {
+    "8008": { "--bg-color":"#333a45","--sub-alt-color":"#2e343d","--main-color":"#f44c7f","--caret-color":"#f44c7f","--sub-color":"#939eae","--text-color":"#e9ecf0","--error-color":"#da3333" },
+    "9009": { "--bg-color":"#eeebe2","--sub-alt-color":"#d3cfc1","--main-color":"#080909","--caret-color":"#7fa480","--sub-color":"#99947f","--text-color":"#080909","--error-color":"#c87e74" },
+    "80s-after-dark": { "--bg-color":"#1b1d36","--sub-alt-color":"#17182c","--main-color":"#fca6d1","--caret-color":"#99d6ea","--sub-color":"#99d6ea","--text-color":"#e1e7ec","--error-color":"#fffb85" },
+    "aether": { "--bg-color":"#101820","--sub-alt-color":"#292136","--main-color":"#eedaea","--caret-color":"#eedaea","--sub-color":"#cf6bdd","--text-color":"#eedaea","--error-color":"#ff5253" },
+    "alduin": { "--bg-color":"#1c1c1c","--sub-alt-color":"#242424","--main-color":"#dfd7af","--caret-color":"#e3e3e3","--sub-color":"#444444","--text-color":"#f5f3ed","--error-color":"#af5f5f" },
+    "alpine": { "--bg-color":"#6c687f","--sub-alt-color":"#77738c","--main-color":"#ffffff","--caret-color":"#585568","--sub-color":"#9994b8","--text-color":"#ffffff","--error-color":"#e32b2b" },
+    "anti-hero": { "--bg-color":"#00002e","--sub-alt-color":"#060548","--main-color":"#ffadad","--caret-color":"#ffffff","--sub-color":"#ff3d8b","--text-color":"#f1deef","--error-color":"#8fecff" },
+    "arch": { "--bg-color":"#0c0d11","--sub-alt-color":"#171a25","--main-color":"#7ebab5","--caret-color":"#7ebab5","--sub-color":"#454864","--text-color":"#f6f5f5","--error-color":"#ff4754" },
+    "aurora": { "--bg-color":"#011926","--sub-alt-color":"#000c13","--main-color":"#00e980","--caret-color":"#00e980","--sub-color":"#245c69","--text-color":"#fff","--error-color":"#b94da1" },
+    "beach": { "--bg-color":"#ffeead","--sub-alt-color":"#f7dc8f","--main-color":"#96ceb4","--caret-color":"#ffcc5c","--sub-color":"#ffcc5c","--text-color":"#5b7869","--error-color":"#ff6f69" },
+    "bento": { "--bg-color":"#2d394d","--sub-alt-color":"#263041","--main-color":"#ff7a90","--caret-color":"#ff7a90","--sub-color":"#4a768d","--text-color":"#fffaf8","--error-color":"#ee2a3a" },
+    "bingsu": { "--bg-color":"#b8a7aa","--sub-alt-color":"#ab989e","--main-color":"#83616e","--caret-color":"#ebe6ea","--sub-color":"#48373d","--text-color":"#ebe6ea","--error-color":"#921341" },
+    "bliss": { "--bg-color":"#262727","--sub-alt-color":"#343231","--main-color":"#f0d3c9","--caret-color":"#f0d3c9","--sub-color":"#665957","--text-color":"#fff","--error-color":"#bd4141" },
+    "blue-dolphin": { "--bg-color":"#003950","--sub-alt-color":"#014961","--main-color":"#ffcefb","--caret-color":"#00bcd4","--sub-color":"#00e4ff","--text-color":"#82eaff","--error-color":"#ffbde6" },
+    "blueberry-dark": { "--bg-color":"#212b42","--sub-alt-color":"#1b2334","--main-color":"#add7ff","--caret-color":"#962f7e","--sub-color":"#5c7da5","--text-color":"#91b4d5","--error-color":"#df4576" },
+    "blueberry-light": { "--bg-color":"#dae0f5","--sub-alt-color":"#c1c7df","--main-color":"#506477","--caret-color":"#df4576","--sub-color":"#92a4be","--text-color":"#678198","--error-color":"#df4576" },
+    "botanical": { "--bg-color":"#7b9c98","--sub-alt-color":"#72908d","--main-color":"#eaf1f3","--caret-color":"#abc6c4","--sub-color":"#495755","--text-color":"#eaf1f3","--error-color":"#f6c9b4" },
+    "bouquet": { "--bg-color":"#173f35","--sub-alt-color":"#1f4e43","--main-color":"#eaa09c","--caret-color":"#eaa09c","--sub-color":"#408e7b","--text-color":"#e9e0d2","--error-color":"#d44729" },
+    "breeze": { "--bg-color":"#e8d5c4","--sub-alt-color":"#f6e6da","--main-color":"#7d67a9","--caret-color":"#7d67a9","--sub-color":"#3a98b9","--text-color":"#1b4c5e","--error-color":"#7d67a9" },
+    "bushido": { "--bg-color":"#242933","--sub-alt-color":"#1c222d","--main-color":"#ec4c56","--caret-color":"#ec4c56","--sub-color":"#596172","--text-color":"#f6f0e9","--error-color":"#ec4c56" },
+    "cafe": { "--bg-color":"#ceb18d","--sub-alt-color":"#bba180","--main-color":"#14120f","--caret-color":"#14120f","--sub-color":"#d4d2d1","--text-color":"#14120f","--error-color":"#c82931" },
+    "camping": { "--bg-color":"#faf1e4","--sub-alt-color":"#e7dccb","--main-color":"#618c56","--caret-color":"#618c56","--sub-color":"#c2b8aa","--text-color":"#3c403b","--error-color":"#ad4f4e" },
+    "carbon": { "--bg-color":"#313131","--sub-alt-color":"#2b2b2b","--main-color":"#f66e0d","--caret-color":"#f66e0d","--sub-color":"#616161","--text-color":"#f5e6c8","--error-color":"#e72d2d" },
+    "catppuccin": { "--bg-color":"#1e1e2e","--sub-alt-color":"#181825","--main-color":"#cba6f7","--caret-color":"#f2cdcd","--sub-color":"#7f849c","--text-color":"#cdd6f4","--error-color":"#f38ba8" },
+    "chaos-theory": { "--bg-color":"#141221","--sub-alt-color":"#1e1d2f","--main-color":"#fd77d7","--caret-color":"#dde5ed","--sub-color":"#676e8a","--text-color":"#dde5ed","--error-color":"#fd77d7" },
+    "cheesecake": { "--bg-color":"#fdf0d5","--sub-alt-color":"#f3e2bf","--main-color":"#8e2949","--caret-color":"#892948","--sub-color":"#d91c81","--text-color":"#3a3335","--error-color":"#5cf074" },
+    "cherry-blossom": { "--bg-color":"#323437","--sub-alt-color":"#2d2f31","--main-color":"#d65ccc","--caret-color":"#ffffff","--sub-color":"#787d82","--text-color":"#d1d0c5","--error-color":"#ca4754" },
+    "comfy": { "--bg-color":"#4a5b6e","--sub-alt-color":"#425366","--main-color":"#f8cdc6","--caret-color":"#9ec1cc","--sub-color":"#9ec1cc","--text-color":"#f5efee","--error-color":"#c9465e" },
+    "copper": { "--bg-color":"#442f29","--sub-alt-color":"#50362e","--main-color":"#b46a55","--caret-color":"#c25c42","--sub-color":"#7ebab5","--text-color":"#e7e0de","--error-color":"#a32424" },
+    "creamsicle": { "--bg-color":"#ff9869","--sub-alt-color":"#fe8954","--main-color":"#fcfcf8","--caret-color":"#fcfcf8","--sub-color":"#ff661f","--text-color":"#fcfcf8","--error-color":"#6a0dad" },
+    "cy-red": { "--bg-color":"#6e2626","--sub-alt-color":"#3f1616","--main-color":"#e55050","--caret-color":"#541d1d","--sub-color":"#ff6060","--text-color":"#ffaaaa","--error-color":"#919fd9" },
+    "cyberspace": { "--bg-color":"#181c18","--sub-alt-color":"#131613","--main-color":"#00ce7c","--caret-color":"#00ce7c","--sub-color":"#9578d3","--text-color":"#c2fbe1","--error-color":"#ff5f5f" },
+    "dark": { "--bg-color":"#111","--sub-alt-color":"#191919","--main-color":"#eee","--caret-color":"#eee","--sub-color":"#444","--text-color":"#eee","--error-color":"#da3333" },
+    "dark-magic-girl": { "--bg-color":"#091f2c","--sub-alt-color":"#071823","--main-color":"#f5b1cc","--caret-color":"#a288d9","--sub-color":"#93e8d3","--text-color":"#a288d9","--error-color":"#e45c96" },
+    "dark-note": { "--bg-color":"#1f1f1f","--sub-alt-color":"#141414","--main-color":"#f2c17b","--caret-color":"#e3dce0","--sub-color":"#768f95","--text-color":"#d2dff4","--error-color":"#ff0000" },
+    "darling": { "--bg-color":"#fec8cd","--sub-alt-color":"#f2babd","--main-color":"#ffffff","--caret-color":"#ffffff","--sub-color":"#a30000","--text-color":"#ffffff","--error-color":"#2e7dde" },
+    "deku": { "--bg-color":"#058b8c","--sub-alt-color":"#0e7d7e","--main-color":"#b63530","--caret-color":"#b63530","--sub-color":"#255458","--text-color":"#f7f2ea","--error-color":"#b63530" },
+    "desert-oasis": { "--bg-color":"#fff2d5","--sub-alt-color":"#eddebc","--main-color":"#d19d01","--caret-color":"#3a87fe","--sub-color":"#0061fe","--text-color":"#332800","--error-color":"#76bb40" },
+    "dev": { "--bg-color":"#1b2028","--sub-alt-color":"#151a21","--main-color":"#23a9d5","--caret-color":"#4b5975","--sub-color":"#4b5975","--text-color":"#ccccb5","--error-color":"#b81b2c" },
+    "diner": { "--bg-color":"#537997","--sub-alt-color":"#4d6f8b","--main-color":"#c3af5b","--caret-color":"#ad5145","--sub-color":"#445c7f","--text-color":"#dfdbc8","--error-color":"#ad5145" },
+    "dino": { "--bg-color":"#ffffff","--sub-alt-color":"#cafad8","--main-color":"#40d672","--caret-color":"#40d672","--sub-color":"#d5d5d5","--text-color":"#1d221f","--error-color":"#ff5f5f" },
+    "discord": { "--bg-color":"#313338","--sub-alt-color":"#2b2d31","--main-color":"#5a65ea","--caret-color":"#5a65ea","--sub-color":"#565861","--text-color":"#dcdee3","--error-color":"#df4f4b" },
+    "dmg": { "--bg-color":"#dadbdc","--sub-alt-color":"#bec1d2","--main-color":"#ae185e","--caret-color":"#384693","--sub-color":"#3846b1","--text-color":"#414141","--error-color":"#ae185e" },
+    "dollar": { "--bg-color":"#e4e4d4","--sub-alt-color":"#cbd0bf","--main-color":"#6b886b","--caret-color":"#424643","--sub-color":"#8a9b69","--text-color":"#555a56","--error-color":"#d60000" },
+    "dots": { "--bg-color":"#121520","--sub-alt-color":"#1b1e2c","--main-color":"#fff","--caret-color":"#fff","--sub-color":"#676e8a","--text-color":"#fff","--error-color":"#da3333" },
+    "dracula": { "--bg-color":"#282a36","--sub-alt-color":"#20222c","--main-color":"#bd93f9","--caret-color":"#bd93f9","--sub-color":"#6272a4","--text-color":"#f8f8f2","--error-color":"#ff5555" },
+    "drowning": { "--bg-color":"#191826","--sub-alt-color":"#1e1f2f","--main-color":"#4a6fb5","--caret-color":"#4f85e8","--sub-color":"#50688c","--text-color":"#9393a7","--error-color":"#be555f" },
+    "dualshot": { "--bg-color":"#737373","--sub-alt-color":"#646464","--main-color":"#212222","--caret-color":"#212222","--sub-color":"#aaaaaa","--text-color":"#212222","--error-color":"#c82931" },
+    "earthsong": { "--bg-color":"#292521","--sub-alt-color":"#1d1b18","--main-color":"#509452","--caret-color":"#1298ba","--sub-color":"#f5ae2d","--text-color":"#e6c7a8","--error-color":"#7e2a33" },
+    "everblush": { "--bg-color":"#141b1e","--sub-alt-color":"#232a2d","--main-color":"#8ccf7e","--caret-color":"#6cbfbf","--sub-color":"#838887","--text-color":"#dadada","--error-color":"#e57474" },
+    "evil-eye": { "--bg-color":"#0084c2","--sub-alt-color":"#0c79be","--main-color":"#f7f2ea","--caret-color":"#f7f2ea","--sub-color":"#01589f","--text-color":"#171718","--error-color":"#ca4754" },
+    "ez-mode": { "--bg-color":"#0068c6","--sub-alt-color":"#005bac","--main-color":"#fa62d5","--caret-color":"#4ddb47","--sub-color":"#138bf7","--text-color":"#ffffff","--error-color":"#4ddb47" },
+    "fire": { "--bg-color":"#0f0000","--sub-alt-color":"#200a0a","--main-color":"#b31313","--caret-color":"#b31313","--sub-color":"#683434","--text-color":"#ffffff","--error-color":"#2f3cb6" },
+    "fledgling": { "--bg-color":"#3b363f","--sub-alt-color":"#332e38","--main-color":"#fc6e83","--caret-color":"#474747","--sub-color":"#8e5568","--text-color":"#e6d5d3","--error-color":"#f52443" },
+    "fleuriste": { "--bg-color":"#c6b294","--sub-alt-color":"#b4a389","--main-color":"#405a52","--caret-color":"#8a785b","--sub-color":"#64374d","--text-color":"#091914","--error-color":"#990000" },
+    "floret": { "--bg-color":"#00272c","--sub-alt-color":"#173033","--main-color":"#ffdd6d","--caret-color":"#c3bd40","--sub-color":"#779097","--text-color":"#e5e5e5","--error-color":"#8a4000" },
+    "froyo": { "--bg-color":"#e1dacb","--sub-alt-color":"#d3cdc1","--main-color":"#7b7d7d","--caret-color":"#7b7d7d","--sub-color":"#b29c5e","--text-color":"#7b7d7d","--error-color":"#f28578" },
+    "frozen-llama": { "--bg-color":"#9bf2ea","--sub-alt-color":"#7fe7dd","--main-color":"#6d44a6","--caret-color":"#ffffff","--sub-color":"#b690fd","--text-color":"#ffffff","--error-color":"#e42629" },
+    "fruit-chew": { "--bg-color":"#d6d3d6","--sub-alt-color":"#cabfca","--main-color":"#5c1e5f","--caret-color":"#b92221","--sub-color":"#b49cb5","--text-color":"#282528","--error-color":"#bd2621" },
+    "fundamentals": { "--bg-color":"#727474","--sub-alt-color":"#666868","--main-color":"#7fa482","--caret-color":"#196378","--sub-color":"#cac4be","--text-color":"#131313","--error-color":"#5e477c" },
+    "future-funk": { "--bg-color":"#2e1a47","--sub-alt-color":"#27173c","--main-color":"#f7f2ea","--caret-color":"#f7f2ea","--sub-color":"#c18fff","--text-color":"#f7f2ea","--error-color":"#f04e98" },
+    "github": { "--bg-color":"#212830","--sub-alt-color":"#141b23","--main-color":"#41ce5c","--caret-color":"#41ce5c","--sub-color":"#788386","--text-color":"#ccdae6","--error-color":"#c23e3a" },
+    "godspeed": { "--bg-color":"#eae4cf","--sub-alt-color":"#ded9c9","--main-color":"#9abbcd","--caret-color":"#f4d476","--sub-color":"#ada998","--text-color":"#646669","--error-color":"#ca4754" },
+    "graen": { "--bg-color":"#303c36","--sub-alt-color":"#36453c","--main-color":"#a59682","--caret-color":"#601420","--sub-color":"#181d1a","--text-color":"#a59682","--error-color":"#601420" },
+    "grand-prix": { "--bg-color":"#36475c","--sub-alt-color":"#42536b","--main-color":"#c0d036","--caret-color":"#c0d036","--sub-color":"#5c6c80","--text-color":"#c1c7d7","--error-color":"#fc5727" },
+    "grape": { "--bg-color":"#2c003e","--sub-alt-color":"#1f002d","--main-color":"#ff8f00","--caret-color":"#ff8f00","--sub-color":"#6e225e","--text-color":"#fff","--error-color":"#ff4081" },
+    "gruvbox-dark": { "--bg-color":"#282828","--sub-alt-color":"#212121","--main-color":"#d79921","--caret-color":"#fabd2f","--sub-color":"#665c54","--text-color":"#ebdbb2","--error-color":"#fb4934" },
+    "gruvbox-light": { "--bg-color":"#fbf1c7","--sub-alt-color":"#daceae","--main-color":"#689d6a","--caret-color":"#689d6a","--sub-color":"#a89984","--text-color":"#3c3836","--error-color":"#cc241d" },
+    "hammerhead": { "--bg-color":"#030613","--sub-alt-color":"#0a1928","--main-color":"#4fcdb9","--caret-color":"#4fcdb9","--sub-color":"#213c53","--text-color":"#e2f1f5","--error-color":"#e32b2b" },
+    "hanok": { "--bg-color":"#d8d2c3","--sub-alt-color":"#cdc0af","--main-color":"#513a2a","--caret-color":"#513a2a","--sub-color":"#8b6f5c","--text-color":"#393b3b","--error-color":"#ca4754" },
+    "hedge": { "--bg-color":"#415e31","--sub-alt-color":"#38502a","--main-color":"#6a994e","--caret-color":"#f2efbb","--sub-color":"#ede5b4","--text-color":"#f7f1d6","--error-color":"#ca3d3f" },
+    "honey": { "--bg-color":"#f2aa00","--sub-alt-color":"#e19e00","--main-color":"#fff546","--caret-color":"#795200","--sub-color":"#a66b00","--text-color":"#f3eecb","--error-color":"#df3333" },
+    "horizon": { "--bg-color":"#1c1e26","--sub-alt-color":"#17181f","--main-color":"#c4a88a","--caret-color":"#bbbbbb","--sub-color":"#db886f","--text-color":"#bbbbbb","--error-color":"#d55170" },
+    "husqy": { "--bg-color":"#000000","--sub-alt-color":"#1e001e","--main-color":"#c58aff","--caret-color":"#c58aff","--sub-color":"#972fff","--text-color":"#ebd7ff","--error-color":"#da3333" },
+    "iceberg-dark": { "--bg-color":"#161821","--sub-alt-color":"#232531","--main-color":"#84a0c6","--caret-color":"#d2d4de","--sub-color":"#595e76","--text-color":"#c6c8d1","--error-color":"#e27878" },
+    "iceberg-light": { "--bg-color":"#e8e9ec","--sub-alt-color":"#ccceda","--main-color":"#2d539e","--caret-color":"#262a3f","--sub-color":"#adb1c4","--text-color":"#33374c","--error-color":"#cc517a" },
+    "incognito": { "--bg-color":"#0e0e0e","--sub-alt-color":"#151515","--main-color":"#ff9900","--caret-color":"#ff9900","--sub-color":"#555555","--text-color":"#c6c6c6","--error-color":"#e44545" },
+    "ishtar": { "--bg-color":"#202020","--sub-alt-color":"#272727","--main-color":"#91170c","--caret-color":"#c58940","--sub-color":"#847869","--text-color":"#fae1c3","--error-color":"#bb1e10" },
+    "iv-clover": { "--bg-color":"#a0a0a0","--sub-alt-color":"#bebebe","--main-color":"#573e40","--caret-color":"#8d8d8d","--sub-color":"#353535","--text-color":"#3b2d3b","--error-color":"#937173" },
+    "iv-spade": { "--bg-color":"#0c0c0c","--sub-alt-color":"#121212","--main-color":"#b7976a","--caret-color":"#bebebe","--sub-color":"#404040","--text-color":"#d3c2c3","--error-color":"#9d7b7d" },
+    "joker": { "--bg-color":"#1a0e25","--sub-alt-color":"#14081f","--main-color":"#99de1e","--caret-color":"#99de1e","--sub-color":"#7554a3","--text-color":"#e9e2f5","--error-color":"#e32b2b" },
+    "laser": { "--bg-color":"#221b44","--sub-alt-color":"#1e173b","--main-color":"#009eaf","--caret-color":"#009eaf","--sub-color":"#b82356","--text-color":"#dbe7e8","--error-color":"#a8d400" },
+    "lavender": { "--bg-color":"#ada6c2","--sub-alt-color":"#a19bb9","--main-color":"#e4e3e9","--caret-color":"#e4e3e9","--sub-color":"#e4e3e9","--text-color":"#2f2a41","--error-color":"#ca4754" },
+    "leather": { "--bg-color":"#a86948","--sub-alt-color":"#9a5f3f","--main-color":"#ffe4bc","--caret-color":"#ef6d49","--sub-color":"#81482b","--text-color":"#ffe4bc","--error-color":"#ca4754" },
+    "lil-dragon": { "--bg-color":"#ebe1ef","--sub-alt-color":"#dac7e2","--main-color":"#8a5bd6","--caret-color":"#212b43","--sub-color":"#a28db8","--text-color":"#212b43","--error-color":"#f794ca" },
+    "lilac-mist": { "--bg-color":"#fffbfe","--sub-alt-color":"#ecdcee","--main-color":"#b94189","--caret-color":"#e099d6","--sub-color":"#e094c2","--text-color":"#5c2954","--error-color":"#ff6f69" },
+    "lime": { "--bg-color":"#7c878e","--sub-alt-color":"#737d82","--main-color":"#93c247","--caret-color":"#93c247","--sub-color":"#4b5257","--text-color":"#bfcfdc","--error-color":"#ea4221" },
+    "luna": { "--bg-color":"#221c35","--sub-alt-color":"#2f2346","--main-color":"#f67599","--caret-color":"#f67599","--sub-color":"#5a3a7e","--text-color":"#ffe3eb","--error-color":"#efc050" },
+    "macroblank": { "--bg-color":"#b2d2c8","--sub-alt-color":"#c6ddd3","--main-color":"#c13117","--caret-color":"#766f71","--sub-color":"#717977","--text-color":"#490909","--error-color":"#c13117" },
+    "magic-girl": { "--bg-color":"#ffffff","--sub-alt-color":"#f2f2f2","--main-color":"#f5b1cc","--caret-color":"#e45c96","--sub-color":"#93e8d3","--text-color":"#00ac8c","--error-color":"#ffe495" },
+    "mashu": { "--bg-color":"#2b2b2c","--sub-alt-color":"#27242c","--main-color":"#76689a","--caret-color":"#76689a","--sub-color":"#d8a0a6","--text-color":"#f1e2e4","--error-color":"#d44729" },
+    "matcha-moccha": { "--bg-color":"#523525","--sub-alt-color":"#422b1e","--main-color":"#7ec160","--caret-color":"#7ec160","--sub-color":"#9e6749","--text-color":"#ecddcc","--error-color":"#fb4934" },
+    "material": { "--bg-color":"#263238","--sub-alt-color":"#2e3c43","--main-color":"#80cbc4","--caret-color":"#80cbc4","--sub-color":"#4c6772","--text-color":"#e6edf3","--error-color":"#fb4934" },
+    "matrix": { "--bg-color":"#000000","--sub-alt-color":"#032000","--main-color":"#15ff00","--caret-color":"#15ff00","--sub-color":"#006500","--text-color":"#d1ffcd","--error-color":"#da3333" },
+    "menthol": { "--bg-color":"#00c18c","--sub-alt-color":"#17ae7d","--main-color":"#ffffff","--caret-color":"#99fdd8","--sub-color":"#186544","--text-color":"#ffffff","--error-color":"#e03c3c" },
+    "metaverse": { "--bg-color":"#232323","--sub-alt-color":"#1d1d1d","--main-color":"#d82934","--caret-color":"#d82934","--sub-color":"#5e5e5e","--text-color":"#e8e8e8","--error-color":"#da3333" },
+    "metropolis": { "--bg-color":"#0f1f2c","--sub-alt-color":"#0b1822","--main-color":"#56c3b7","--caret-color":"#56c3b7","--sub-color":"#326984","--text-color":"#e4edf1","--error-color":"#d44729" },
+    "mexican": { "--bg-color":"#f8ad34","--sub-alt-color":"#f9b951","--main-color":"#b12189","--caret-color":"#eee","--sub-color":"#333","--text-color":"#eee","--error-color":"#da3333" },
+    "miami": { "--bg-color":"#f35588","--sub-alt-color":"#db4979","--main-color":"#05dfd7","--caret-color":"#a3f7bf","--sub-color":"#94294c","--text-color":"#f0e9ec","--error-color":"#fff591" },
+    "miami-nights": { "--bg-color":"#18181a","--sub-alt-color":"#0f0f10","--main-color":"#e4609b","--caret-color":"#e4609b","--sub-color":"#47bac0","--text-color":"#fff","--error-color":"#fff591" },
+    "midnight": { "--bg-color":"#0b0e13","--sub-alt-color":"#141a24","--main-color":"#60759f","--caret-color":"#60759f","--sub-color":"#394760","--text-color":"#9fadc6","--error-color":"#c27070" },
+    "milkshake": { "--bg-color":"#ffffff","--sub-alt-color":"#ddeff3","--main-color":"#212b43","--caret-color":"#212b43","--sub-color":"#62cfe6","--text-color":"#212b43","--error-color":"#f19dac" },
+    "mint": { "--bg-color":"#05385b","--sub-alt-color":"#07324e","--main-color":"#5cdb95","--caret-color":"#5cdb95","--sub-color":"#20688a","--text-color":"#edf5e1","--error-color":"#f35588" },
+    "mizu": { "--bg-color":"#afcbdd","--sub-alt-color":"#9fc1d4","--main-color":"#fcfbf6","--caret-color":"#fcfbf6","--sub-color":"#85a5bb","--text-color":"#1a2633","--error-color":"#bf616a" },
+    "modern-dolch": { "--bg-color":"#2d2e30","--sub-alt-color":"#242527","--main-color":"#7eddd3","--caret-color":"#7eddd3","--sub-color":"#54585c","--text-color":"#e3e6eb","--error-color":"#d36a7b" },
+    "modern-dolch-light": { "--bg-color":"#dbdbdb","--sub-alt-color":"#e8e8e8","--main-color":"#8fd1c3","--caret-color":"#8fd1c3","--sub-color":"#a3a2a2","--text-color":"#454545","--error-color":"#ea8a9a" },
+    "modern-ink": { "--bg-color":"#ffffff","--sub-alt-color":"#ececec","--main-color":"#ff360d","--caret-color":"#ff0000","--sub-color":"#b7b7b7","--text-color":"#000000","--error-color":"#d70000" },
+    "monokai": { "--bg-color":"#272822","--sub-alt-color":"#1f201b","--main-color":"#a6e22e","--caret-color":"#66d9ef","--sub-color":"#e6db74","--text-color":"#e2e2dc","--error-color":"#f92672" },
+    "moonlight": { "--bg-color":"#191f28","--sub-alt-color":"#141a22","--main-color":"#c69f68","--caret-color":"#8f744b","--sub-color":"#4b5975","--text-color":"#ccccb5","--error-color":"#b81b2c" },
+    "mountain": { "--bg-color":"#0f0f0f","--sub-alt-color":"#1a1a1a","--main-color":"#e7e7e7","--caret-color":"#f5f5f5","--sub-color":"#4c4c4c","--text-color":"#e7e7e7","--error-color":"#ac8c8c" },
+    "mr-sleeves": { "--bg-color":"#d1d7da","--sub-alt-color":"#bfcbd1","--main-color":"#daa99b","--caret-color":"#8fadc9","--sub-color":"#9a9fa1","--text-color":"#1d1d1d","--error-color":"#bf6464" },
+    "ms-cupcakes": { "--bg-color":"#ffffff","--sub-alt-color":"#edf8fa","--main-color":"#5ed5f3","--caret-color":"#303030","--sub-color":"#d64090","--text-color":"#0a282f","--error-color":"#a4dd32" },
+    "muted": { "--bg-color":"#525252","--sub-alt-color":"#494949","--main-color":"#c5b4e3","--caret-color":"#b1e4e3","--sub-color":"#939eae","--text-color":"#b1e4e3","--error-color":"#edc1cd" },
+    "nautilus": { "--bg-color":"#132237","--sub-alt-color":"#0e1a29","--main-color":"#ebb723","--caret-color":"#ebb723","--sub-color":"#0b4c6c","--text-color":"#1cbaac","--error-color":"#da3333" },
+    "nebula": { "--bg-color":"#212135","--sub-alt-color":"#191928","--main-color":"#be3c88","--caret-color":"#78c729","--sub-color":"#19b3b8","--text-color":"#838686","--error-color":"#ca4754" },
+    "night-runner": { "--bg-color":"#212121","--sub-alt-color":"#1a1a1a","--main-color":"#feff04","--caret-color":"#feff04","--sub-color":"#5c4a9c","--text-color":"#e8e8e8","--error-color":"#da3333" },
+    "nord": { "--bg-color":"#242933","--sub-alt-color":"#2e3440","--main-color":"#88c0d0","--caret-color":"#eceff4","--sub-color":"#929aaa","--text-color":"#d8dee9","--error-color":"#bf616a" },
+    "nord-light": { "--bg-color":"#eceff4","--sub-alt-color":"#d8dee9","--main-color":"#8fbcbb","--caret-color":"#8fbcbb","--sub-color":"#6a7791","--text-color":"#8fbcbb","--error-color":"#bf616a" },
+    "norse": { "--bg-color":"#242425","--sub-alt-color":"#303333","--main-color":"#2b5f6d","--caret-color":"#2b5f6d","--sub-color":"#505b5e","--text-color":"#ccc2b1","--error-color":"#7e2a2a" },
+    "oblivion": { "--bg-color":"#313231","--sub-alt-color":"#3a3b3b","--main-color":"#a5a096","--caret-color":"#a5a096","--sub-color":"#5d6263","--text-color":"#f7f5f1","--error-color":"#dd452e" },
+    "olive": { "--bg-color":"#e9e5cc","--sub-alt-color":"#d4cfbc","--main-color":"#92946f","--caret-color":"#92946f","--sub-color":"#b7b39e","--text-color":"#373731","--error-color":"#cf2f2f" },
+    "olivia": { "--bg-color":"#1c1b1d","--sub-alt-color":"#262223","--main-color":"#deaf9d","--caret-color":"#deaf9d","--sub-color":"#4e3e3e","--text-color":"#f2efed","--error-color":"#bf616a" },
+    "onedark": { "--bg-color":"#2f343f","--sub-alt-color":"#262b34","--main-color":"#61afef","--caret-color":"#61afef","--sub-color":"#eceff4","--text-color":"#98c379","--error-color":"#e06c75" },
+    "our-theme": { "--bg-color":"#ce1226","--sub-alt-color":"#9f1020","--main-color":"#fcd116","--caret-color":"#fcd116","--sub-color":"#6d0f19","--text-color":"#ffffff","--error-color":"#fcd116" },
+    "pale-nimbus": { "--bg-color":"#433e4c","--sub-alt-color":"#694f5e","--main-color":"#94ffc2","--caret-color":"#9efffd","--sub-color":"#ffaca3","--text-color":"#feffdb","--error-color":"#ff5c5c" },
+    "paper": { "--bg-color":"#eeeeee","--sub-alt-color":"#dddddd","--main-color":"#444444","--caret-color":"#444444","--sub-color":"#b2b2b2","--text-color":"#444444","--error-color":"#d70000" },
+    "passion-fruit": { "--bg-color":"#7c2142","--sub-alt-color":"#833c5e","--main-color":"#f4a3b4","--caret-color":"#ffffff","--sub-color":"#9994b8","--text-color":"#ffffff","--error-color":"#deb80b" },
+    "pastel": { "--bg-color":"#e0b2bd","--sub-alt-color":"#d29fab","--main-color":"#fbf4b6","--caret-color":"#fbf4b6","--sub-color":"#b4e9ff","--text-color":"#6d5c6f","--error-color":"#ff6961" },
+    "peach-blossom": { "--bg-color":"#292929","--sub-alt-color":"#2a363b","--main-color":"#99b898","--caret-color":"#616161","--sub-color":"#616161","--text-color":"#fecea8","--error-color":"#ff6961" },
+    "peaches": { "--bg-color":"#e0d7c1","--sub-alt-color":"#e2caaf","--main-color":"#dd7a5f","--caret-color":"#dd7a5f","--sub-color":"#e7b28e","--text-color":"#5f4c41","--error-color":"#ff6961" },
+    "phantom": { "--bg-color":"#001","--sub-alt-color":"#24283b","--main-color":"#7aa2f7","--caret-color":"#bb9af7","--sub-color":"#414868","--text-color":"#c0caf5","--error-color":"#f7768e" },
+    "pink-lemonade": { "--bg-color":"#f6d992","--sub-alt-color":"#f6cc93","--main-color":"#f6a192","--caret-color":"#fcfcf8","--sub-color":"#f6b092","--text-color":"#fcfcf8","--error-color":"#ff6f69" },
+    "pulse": { "--bg-color":"#181818","--sub-alt-color":"#121212","--main-color":"#17b8bd","--caret-color":"#17b8bd","--sub-color":"#53565a","--text-color":"#e5f4f4","--error-color":"#da3333" },
+    "purpleish": { "--bg-color":"#1e1e32","--sub-alt-color":"#181829","--main-color":"#7a52cc","--caret-color":"#7a52cc","--sub-color":"#5c5c99","--text-color":"#a3a3cc","--error-color":"#ff6666" },
+    "rainbow-trail": { "--bg-color":"#f5f5f5","--sub-alt-color":"#e0e0e0","--main-color":"#363636","--caret-color":"#0d0d0d","--sub-color":"#4f4f4f","--text-color":"#1f1f1f","--error-color":"#ff0008" },
+    "red-dragon": { "--bg-color":"#1a0b0c","--sub-alt-color":"#0e0506","--main-color":"#ff3a32","--caret-color":"#ff3a32","--sub-color":"#e2a528","--text-color":"#4a4d4e","--error-color":"#771b1f" },
+    "red-samurai": { "--bg-color":"#84202c","--sub-alt-color":"#751d26","--main-color":"#c79e6e","--caret-color":"#c79e6e","--sub-color":"#55131b","--text-color":"#e2dad0","--error-color":"#33bbda" },
+    "repose-dark": { "--bg-color":"#2f3338","--sub-alt-color":"#3a3c3d","--main-color":"#d6d2bc","--caret-color":"#d6d2bc","--sub-color":"#8f8e84","--text-color":"#d6d2bc","--error-color":"#ff4a59" },
+    "repose-light": { "--bg-color":"#efead0","--sub-alt-color":"#dbd6c4","--main-color":"#5f605e","--caret-color":"#5f605e","--sub-color":"#8f8e84","--text-color":"#333538","--error-color":"#c43c53" },
+    "retro": { "--bg-color":"#dad3c1","--sub-alt-color":"#c8c3b3","--main-color":"#1d1b17","--caret-color":"#1d1b17","--sub-color":"#918b7d","--text-color":"#1d1b17","--error-color":"#bf616a" },
+    "retrocast": { "--bg-color":"#07737a","--sub-alt-color":"#26858b","--main-color":"#88dbdf","--caret-color":"#88dbdf","--sub-color":"#f3e03b","--text-color":"#ffffff","--error-color":"#ff585d" },
+    "rgb": { "--bg-color":"#111","--sub-alt-color":"#1a1a1a","--main-color":"#eee","--caret-color":"#eee","--sub-color":"#444","--text-color":"#eee","--error-color":"#eee" },
+    "rose-pine": { "--bg-color":"#1f1d27","--sub-alt-color":"#282533","--main-color":"#9ccfd8","--caret-color":"#f6c177","--sub-color":"#c4a7e7","--text-color":"#e0def4","--error-color":"#eb6f92" },
+    "rose-pine-dawn": { "--bg-color":"#fffaf3","--sub-alt-color":"#f0e9df","--main-color":"#56949f","--caret-color":"#ea9d34","--sub-color":"#c4a7e7","--text-color":"#286983","--error-color":"#b4637a" },
+    "rose-pine-moon": { "--bg-color":"#2a273f","--sub-alt-color":"#211f32","--main-color":"#9ccfd8","--caret-color":"#f6c177","--sub-color":"#c4a7e7","--text-color":"#e0def4","--error-color":"#eb6f92" },
+    "rudy": { "--bg-color":"#1a2b3e","--sub-alt-color":"#152231","--main-color":"#af8f5c","--caret-color":"#af8f5c","--sub-color":"#3a506c","--text-color":"#c9c8bf","--error-color":"#bf616a" },
+    "ryujinscales": { "--bg-color":"#081426","--sub-alt-color":"#040e1d","--main-color":"#f17754","--caret-color":"#ef6d49","--sub-color":"#ffbc90","--text-color":"#ffe4bc","--error-color":"#ca4754" },
+    "serika": { "--bg-color":"#e1e1e3","--sub-alt-color":"#d1d3d8","--main-color":"#e2b714","--caret-color":"#e2b714","--sub-color":"#aaaeb3","--text-color":"#323437","--error-color":"#da3333" },
+    "serika-dark": { "--bg-color":"#323437","--sub-alt-color":"#2c2e31","--main-color":"#e2b714","--caret-color":"#e2b714","--sub-color":"#646669","--text-color":"#d1d0c5","--error-color":"#ca4754" },
+    "sewing-tin": { "--bg-color":"#241963","--sub-alt-color":"#2a277a","--main-color":"#f2ce83","--caret-color":"#fbdb8c","--sub-color":"#446ad5","--text-color":"#ffffff","--error-color":"#c6915e" },
+    "sewing-tin-light": { "--bg-color":"#ffffff","--sub-alt-color":"#c8cedf","--main-color":"#2d2076","--caret-color":"#fbdb8c","--sub-color":"#385eca","--text-color":"#2d2076","--error-color":"#f2ce83" },
+    "shadow": { "--bg-color":"#000","--sub-alt-color":"#171717","--main-color":"#eee","--caret-color":"#eee","--sub-color":"#444","--text-color":"#eee","--error-color":"#fff" },
+    "shoko": { "--bg-color":"#ced7e0","--sub-alt-color":"#b7cada","--main-color":"#81c4dd","--caret-color":"#81c4dd","--sub-color":"#7599b1","--text-color":"#3b4c58","--error-color":"#bf616a" },
+    "slambook": { "--bg-color":"#fffdde","--sub-alt-color":"#c6dce4","--main-color":"#03001c","--caret-color":"#367e18","--sub-color":"#1c82adc4","--text-color":"#13005a","--error-color":"#f900bf" },
+    "snes": { "--bg-color":"#bfbec2","--sub-alt-color":"#b5b0c2","--main-color":"#553d94","--caret-color":"#523793","--sub-color":"#9f8ad4","--text-color":"#2e2e2e","--error-color":"#ca4754" },
+    "soaring-skies": { "--bg-color":"#fff9f2","--sub-alt-color":"#e5ddd4","--main-color":"#55c6f0","--caret-color":"#1e107a","--sub-color":"#1e107a","--text-color":"#1d1e1e","--error-color":"#fb5745" },
+    "solarized-dark": { "--bg-color":"#002b36","--sub-alt-color":"#00222b","--main-color":"#859900","--caret-color":"#dc322f","--sub-color":"#2aa198","--text-color":"#268bd2","--error-color":"#d33682" },
+    "solarized-light": { "--bg-color":"#fdf6e3","--sub-alt-color":"#e2d8be","--main-color":"#859900","--caret-color":"#dc322f","--sub-color":"#2aa198","--text-color":"#181819","--error-color":"#d33682" },
+    "solarized-osaka": { "--bg-color":"#00141a","--sub-alt-color":"#00222b","--main-color":"#859900","--caret-color":"#b58900","--sub-color":"#2aa198","--text-color":"#eee8d5","--error-color":"#dc322f" },
+    "sonokai": { "--bg-color":"#2c2e34","--sub-alt-color":"#232429","--main-color":"#9ed072","--caret-color":"#f38c71","--sub-color":"#e7c664","--text-color":"#e2e2e3","--error-color":"#fc5d7c" },
+    "spiderman": { "--bg-color":"#0d1219","--sub-alt-color":"#0b1c2e","--main-color":"#e23636","--caret-color":"#e23636","--sub-color":"#0476f2","--text-color":"#f0f0f0","--error-color":"#0476f2" },
+    "stealth": { "--bg-color":"#010203","--sub-alt-color":"#121212","--main-color":"#383e42","--caret-color":"#e25303","--sub-color":"#5e676e","--text-color":"#383e42","--error-color":"#e25303" },
+    "strawberry": { "--bg-color":"#f37f83","--sub-alt-color":"#ef6e77","--main-color":"#fcfcf8","--caret-color":"#fcfcf8","--sub-color":"#e53c58","--text-color":"#fcfcf8","--error-color":"#fcd23f" },
+    "striker": { "--bg-color":"#124883","--sub-alt-color":"#104176","--main-color":"#d7dcda","--caret-color":"#d7dcda","--sub-color":"#0f2d4e","--text-color":"#d6dbd9","--error-color":"#fb4934" },
+    "suisei": { "--bg-color":"#3b4a62","--sub-alt-color":"#313e55","--main-color":"#bef0ff","--caret-color":"#bef0ff","--sub-color":"#fe9841","--text-color":"#dbdeeb","--error-color":"#ed2939" },
+    "sunset": { "--bg-color":"#211e24","--sub-alt-color":"#161319","--main-color":"#f79777","--caret-color":"#ffca99","--sub-color":"#5b578e","--text-color":"#f4e0c9","--error-color":"#66a1ff" },
+    "superuser": { "--bg-color":"#262a33","--sub-alt-color":"#1f232c","--main-color":"#43ffaf","--caret-color":"#43ffaf","--sub-color":"#526777","--text-color":"#e5f7ef","--error-color":"#ff5f5f" },
+    "sweden": { "--bg-color":"#0058a3","--sub-alt-color":"#024f8e","--main-color":"#ffcc02","--caret-color":"#b5b5b5","--sub-color":"#57abdb","--text-color":"#ffffff","--error-color":"#e74040" },
+    "tangerine": { "--bg-color":"#ffede0","--sub-alt-color":"#fdd3bf","--main-color":"#fe5503","--caret-color":"#5d8500","--sub-color":"#ff9562","--text-color":"#3d1705","--error-color":"#7fb500" },
+    "taro": { "--bg-color":"#b3baff","--sub-alt-color":"#a3a7df","--main-color":"#130f1a","--caret-color":"#00e9e5","--sub-color":"#6f6c91","--text-color":"#130f1a","--error-color":"#ffe23e" },
+    "terminal": { "--bg-color":"#191a1b","--sub-alt-color":"#141516","--main-color":"#79a617","--caret-color":"#79a617","--sub-color":"#48494b","--text-color":"#e7eae0","--error-color":"#a61717" },
+    "terra": { "--bg-color":"#0c100e","--sub-alt-color":"#0f1d18","--main-color":"#89c559","--caret-color":"#89c559","--sub-color":"#436029","--text-color":"#f0edd1","--error-color":"#d3ca78" },
+    "terrazzo": { "--bg-color":"#f1e5da","--sub-alt-color":"#e3d3c6","--main-color":"#e0794e","--caret-color":"#e0794e","--sub-color":"#688e8f","--text-color":"#023e3b","--error-color":"#a01034" },
+    "terror-below": { "--bg-color":"#0b1e1a","--sub-alt-color":"#041715","--main-color":"#66ac92","--caret-color":"#66ac92","--sub-color":"#015c53","--text-color":"#dceae5","--error-color":"#bf616a" },
+    "tiramisu": { "--bg-color":"#cfc6b9","--sub-alt-color":"#d0bca7","--main-color":"#c0976f","--caret-color":"#7d5448","--sub-color":"#c0976f","--text-color":"#7d5448","--error-color":"#e9632d" },
+    "trackday": { "--bg-color":"#464d66","--sub-alt-color":"#3d4359","--main-color":"#e0513e","--caret-color":"#475782","--sub-color":"#5c7eb9","--text-color":"#cfcfcf","--error-color":"#e44e4e" },
+    "trance": { "--bg-color":"#00021b","--sub-alt-color":"#18214c","--main-color":"#e51376","--caret-color":"#e51376","--sub-color":"#3c4c79","--text-color":"#fff","--error-color":"#02d3b0" },
+    "tron-orange": { "--bg-color":"#0d1c1c","--sub-alt-color":"#9c9191","--main-color":"#f0e800","--caret-color":"#f0e800","--sub-color":"#ff6600","--text-color":"#ffffff","--error-color":"#ff0000" },
+    "vaporwave": { "--bg-color":"#a4a7ea","--sub-alt-color":"#989bd9","--main-color":"#e368da","--caret-color":"#28cafe","--sub-color":"#7c7faf","--text-color":"#f1ebf1","--error-color":"#573ca9" },
+    "vesper": { "--bg-color":"#101010","--sub-alt-color":"#1c1c1c","--main-color":"#ffc799","--caret-color":"#99ffe4","--sub-color":"#a0a0a0","--text-color":"#ffffff","--error-color":"#ff8080" },
+    "vesper-light": { "--bg-color":"#ffffff","--sub-alt-color":"#fff8f4","--main-color":"#fb7100","--caret-color":"#067a6e","--sub-color":"#a0a0a0","--text-color":"#000000","--error-color":"#ed2839" },
+    "viridescent": { "--bg-color":"#2c3333","--sub-alt-color":"#232828","--main-color":"#95d5b2","--caret-color":"#f0d3c9","--sub-color":"#84a98c","--text-color":"#e9f5db","--error-color":"#ff4646" },
+    "voc": { "--bg-color":"#190618","--sub-alt-color":"#2c0c28","--main-color":"#e0caac","--caret-color":"#e0caac","--sub-color":"#4c1e48","--text-color":"#eeeae4","--error-color":"#af3735" },
+    "vscode": { "--bg-color":"#1e1e1e","--sub-alt-color":"#191919","--main-color":"#007acc","--caret-color":"#569cd6","--sub-color":"#4d4d4d","--text-color":"#d4d4d4","--error-color":"#f44747" },
+    "watermelon": { "--bg-color":"#1f4437","--sub-alt-color":"#244d3f","--main-color":"#d6686f","--caret-color":"#d6686f","--sub-color":"#3e7a65","--text-color":"#cdc6bc","--error-color":"#c82931" },
+    "wavez": { "--bg-color":"#1c292f","--sub-alt-color":"#1b3238","--main-color":"#6bde3b","--caret-color":"#6bde3b","--sub-color":"#1f5e6b","--text-color":"#e9efe6","--error-color":"#ca4754" },
+    "witch-girl": { "--bg-color":"#f3dbda","--sub-alt-color":"#e7c8be","--main-color":"#56786a","--caret-color":"#afc5bd","--sub-color":"#ddb4a7","--text-color":"#56786a","--error-color":"#b29a91" },
+  }
+
+  const VAR_IDS = [
+    { var: "--bg-color",      input: "cp-bg",      swatch: "swatch-bg",      val: "cv-bg"      },
+    { var: "--sub-alt-color", input: "cp-sub-alt", swatch: "swatch-sub-alt", val: "cv-sub-alt" },
+    { var: "--main-color",    input: "cp-main",    swatch: "swatch-main",    val: "cv-main"    },
+    { var: "--text-color",    input: "cp-text",    swatch: "swatch-text",    val: "cv-text"    },
+    { var: "--sub-color",     input: "cp-sub",     swatch: "swatch-sub",     val: "cv-sub"     },
+    { var: "--error-color",   input: "cp-error",   swatch: "swatch-error",   val: "cv-error"   },
+  ];
+
+  let currentTheme = localStorage.getItem("app-theme") || "serika-dark";
+  let customVars   = JSON.parse(localStorage.getItem("app-custom-vars") || "{}");
+
+  function applyTheme(themeName) {
+    ROOT.setAttribute("data-theme", themeName === "serika-dark" ? "serika-dark" : themeName);
+    const map = THEMES[themeName] || THEMES["serika-dark"];
+    Object.entries(map).forEach(([k,v]) => ROOT.style.setProperty(k, v));
+    ROOT.style.setProperty("--border-color",
+      `color-mix(in srgb, ${map["--sub-color"]} 30%, ${map["--bg-color"]})`);
+    ROOT.style.setProperty("--caret-color", map["--main-color"]);
+    syncPickersToVars(map);
+    updateActivePreset(themeName);
+  }
+
+  function applyCustomVars(vars) {
+    Object.entries(vars).forEach(([k,v]) => ROOT.style.setProperty(k, v));
+    syncPickersToVars(vars);
+  }
+
+  function syncPickersToVars(map) {
+    VAR_IDS.forEach(({ var: v, input, swatch, val }) => {
+      const hex = map[v];
+      if (!hex) return;
+      const inp = document.getElementById(input);
+      const sw  = document.getElementById(swatch);
+      const vv  = document.getElementById(val);
+      if (inp) inp.value = hex;
+      if (sw)  sw.style.background = hex;
+      if (vv)  vv.textContent = hex;
+    });
+  }
+
+  function updateActivePreset(name) {
+    document.querySelectorAll(".theme-swatch").forEach(s => {
+      s.classList.toggle("active", s.dataset.theme === name);
+    });
+  }
+
+  // Wire preset swatches
+  document.querySelectorAll(".theme-swatch").forEach(sw => {
+    sw.addEventListener("click", () => {
+      currentTheme = sw.dataset.theme;
+      customVars = {};
+      localStorage.setItem("app-theme", currentTheme);
+      localStorage.removeItem("app-custom-vars");
+      applyTheme(currentTheme);
+    });
+  });
+
+  // Wire colour pickers
+  VAR_IDS.forEach(({ var: v, input, swatch, val }) => {
+    const inp = document.getElementById(input);
+    if (!inp) return;
+    inp.addEventListener("input", () => {
+      const hex = inp.value;
+      ROOT.style.setProperty(v, hex);
+      const sw = document.getElementById(swatch);
+      const vv = document.getElementById(val);
+      if (sw) sw.style.background = hex;
+      if (vv) vv.textContent = hex;
+      customVars[v] = hex;
+      localStorage.setItem("app-custom-vars", JSON.stringify(customVars));
+      updateActivePreset("custom");
+    });
+  });
+
+  // Reset
+  document.getElementById("theme-reset-btn").addEventListener("click", () => {
+    currentTheme = "serika-dark";
+    customVars = {};
+    localStorage.setItem("app-theme", currentTheme);
+    localStorage.removeItem("app-custom-vars");
+    applyTheme(currentTheme);
+  });
+
+  // Open / close theme modal
+  document.getElementById("theme-toggle-btn").addEventListener("click", () => {
+    document.getElementById("theme-overlay").classList.add("open");
+  });
+  document.getElementById("theme-modal-close").addEventListener("click", () => {
+    document.getElementById("theme-overlay").classList.remove("open");
+  });
+  document.getElementById("theme-overlay").addEventListener("click", e => {
+    if (e.target === e.currentTarget) document.getElementById("theme-overlay").classList.remove("open");
+  });
+
+  // Theme search filter
+  const themeSearchInput = document.getElementById("theme-search");
+  if (themeSearchInput) {
+    themeSearchInput.addEventListener("input", () => {
+      const q = themeSearchInput.value.toLowerCase().trim();
+      document.querySelectorAll("#theme-presets .theme-swatch").forEach(sw => {
+        const name = (sw.title || sw.dataset.theme || "").toLowerCase();
+        sw.style.display = !q || name.includes(q) ? "" : "none";
+      });
+    });
+  }
+
+  // Init on load
+  applyTheme(currentTheme);
+  if (Object.keys(customVars).length) applyCustomVars(customVars);
+})();
+
+/* ── Navbar scroll shadow ─────────────────────────────────── */
+(function() {
+  const nb = document.getElementById("navbar");
+  if (!nb) return;
+  // Listen on main-content since body no longer scrolls
+  const mc = document.getElementById("main-content");
+  if (mc) {
+    mc.addEventListener("scroll", () => nb.classList.toggle("scrolled", mc.scrollTop > 10), { passive: true });
+  }
+
+  // Mobile toggle
+  const toggle = document.getElementById("navToggle");
+  const links  = document.getElementById("navLinks");
+  if (toggle && links) {
+    toggle.addEventListener("click", () => links.classList.toggle("open"));
+    links.querySelectorAll("a, button").forEach(el => {
+      el.addEventListener("click", () => links.classList.remove("open"));
+    });
+  }
+})();
+
+/* ── Navbar login/logout wiring ───────────────────────────── */
+(function() {
+  const loginBtn  = document.getElementById("nav-login-btn");
+  const heroLogin = document.getElementById("hero-login-btn");
+
+  function openAuthModal() {
+    const overlay = document.getElementById("auth-overlay");
+    if (overlay) {
+      overlay.style.display = "flex";
+      document.getElementById("tab-login").click();
+    }
+  }
+
+  if (loginBtn)  loginBtn.addEventListener("click", openAuthModal);
+  if (heroLogin) heroLogin.addEventListener("click", openAuthModal);
+
+  // Mirror auth status to navbar
+  const observer = new MutationObserver(() => syncNavAuth());
+  const authStatusEl = document.getElementById("auth-status");
+  if (authStatusEl) observer.observe(authStatusEl, { childList: true, subtree: true, attributes: true, attributeFilter: ["style"] });
+
+  function syncNavAuth() {
+    const status   = document.getElementById("auth-status");
+    const logoutEl = document.getElementById("btn-logout");
+    const navStatus= document.getElementById("nav-auth-status");
+    const loginEl  = document.getElementById("nav-login-btn");
+    if (!status || !logoutEl || !navStatus || !loginEl) return;
+
+    const isLoggedIn = logoutEl.style.display !== "none" && logoutEl.style.display !== "";
+    navStatus.textContent = isLoggedIn ? (status.textContent || "") : "";
+    navStatus.classList.toggle("visible", isLoggedIn && navStatus.textContent !== "");
+    loginEl.style.display = isLoggedIn ? "none" : "";
+  }
+
+  // Also expose a global so auth.js can call after login/logout
+  window.syncNavAuth = syncNavAuth;
+  setTimeout(syncNavAuth, 1000);
+})();
+
+/* ── Typewriter ───────────────────────────────────────────── */
+(function() {
+  const el = document.getElementById("typewriter");
+  if (!el) return;
+  const phrases = [
+    "civil engineering tools",
+    "desktop apps for engineers",
+    "unit converter",
+    "autocad utilities",
+    "structural calculators",
+    "water supply design sheets",
+    "built with .net & passion",
+    "open source & free to use",
+  ];
+  let pi = 0, ci = 0, del = false, paused = false;
+  function type() {
+    const p = phrases[pi];
+    el.textContent = del ? p.substring(0, ci - 1) : p.substring(0, ci + 1);
+    del ? ci-- : ci++;
+    if (!del && ci === p.length) { del = true; paused = true; setTimeout(() => { paused = false; tick(); }, 2000); return; }
+    if (del && ci === 0) { del = false; pi = (pi + 1) % phrases.length; }
+    tick();
+  }
+  function tick() { if (!paused) setTimeout(type, del ? 45 : 85); }
+  setTimeout(tick, 600);
+})();
+
+/* ── Fade-in on scroll ────────────────────────────────────── */
+(function() {
+  const els = document.querySelectorAll(".fade-in");
+  if (!els.length || !("IntersectionObserver" in window)) {
+    els.forEach(e => e.classList.add("visible")); return;
+  }
+  const mc = document.getElementById("main-content");
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add("visible"), i * 80);
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { root: mc || null, threshold: 0.08, rootMargin: "0px 0px -40px 0px" });
+  els.forEach(e => obs.observe(e));
+})();
+
+/* ── Unit Converter ───────────────────────────────────────── */
+(function() {
+  const UNITS = {
+    length:   { label:"Length",       units:[{symbol:"mm",name:"millimetre",factor:0.001},{symbol:"cm",name:"centimetre",factor:0.01},{symbol:"m",name:"metre",factor:1},{symbol:"km",name:"kilometre",factor:1000},{symbol:"in",name:"inch",factor:0.0254},{symbol:"ft",name:"foot",factor:0.3048},{symbol:"yd",name:"yard",factor:0.9144},{symbol:"mi",name:"mile",factor:1609.344}] },
+    area:     { label:"Area",         units:[{symbol:"mm²",name:"sq. millimetre",factor:1e-6},{symbol:"cm²",name:"sq. centimetre",factor:1e-4},{symbol:"m²",name:"sq. metre",factor:1},{symbol:"km²",name:"sq. kilometre",factor:1e6},{symbol:"in²",name:"sq. inch",factor:6.4516e-4},{symbol:"ft²",name:"sq. foot",factor:0.092903},{symbol:"ac",name:"acre",factor:4046.856},{symbol:"ha",name:"hectare",factor:10000}] },
+    pressure: { label:"Pressure",     units:[{symbol:"Pa",name:"pascal",factor:1},{symbol:"kPa",name:"kilopascal",factor:1e3},{symbol:"MPa",name:"megapascal",factor:1e6},{symbol:"bar",name:"bar",factor:1e5},{symbol:"psi",name:"lb/in² (psi)",factor:6894.757},{symbol:"psf",name:"lb/ft² (psf)",factor:47.8803},{symbol:"m H₂O",name:"metre water column",factor:9806.65},{symbol:"atm",name:"atmosphere",factor:101325}] },
+    flow:     { label:"Flow Rate",    units:[{symbol:"L/s",name:"litre/second",factor:1e-3},{symbol:"L/min",name:"litre/minute",factor:1/60000},{symbol:"m³/s",name:"cubic m/second",factor:1},{symbol:"m³/hr",name:"cubic m/hour",factor:1/3600},{symbol:"ML/d",name:"megalitre/day",factor:1000/86400},{symbol:"gpm",name:"US gal/min",factor:6.30902e-5},{symbol:"cfs",name:"cu ft/sec",factor:0.028317}] },
+    force:    { label:"Force / Load", units:[{symbol:"N",name:"newton",factor:1},{symbol:"kN",name:"kilonewton",factor:1e3},{symbol:"MN",name:"meganewton",factor:1e6},{symbol:"kgf",name:"kilogram-force",factor:9.80665},{symbol:"lbf",name:"pound-force",factor:4.44822},{symbol:"kip",name:"kilopound",factor:4448.22},{symbol:"tf",name:"tonne-force",factor:9806.65}] },
+    velocity: { label:"Velocity",     units:[{symbol:"m/s",name:"metre/second",factor:1},{symbol:"km/h",name:"kilometre/hr",factor:1/3.6},{symbol:"ft/s",name:"foot/second",factor:0.3048},{symbol:"mph",name:"miles/hour",factor:0.44704},{symbol:"knot",name:"knot",factor:0.514444}] },
+    volume:   { label:"Volume",       units:[{symbol:"L",name:"litre",factor:0.001},{symbol:"mL",name:"millilitre",factor:1e-6},{symbol:"m³",name:"cubic metre",factor:1},{symbol:"ML",name:"megalitre",factor:1000},{symbol:"ft³",name:"cubic foot",factor:0.028317},{symbol:"gal",name:"US gallon",factor:0.003785},{symbol:"bbl",name:"barrel (US liq.)",factor:0.158987}] },
+  };
+
+  const catSel   = document.getElementById("uc-category");
+  const fromSel  = document.getElementById("uc-from-unit");
+  const toSel    = document.getElementById("uc-to-unit");
+  const valInp   = document.getElementById("uc-value");
+  const resEl    = document.getElementById("uc-result");
+  const resLbl   = document.getElementById("uc-result-label");
+  const tblBody  = document.getElementById("uc-table-body");
+  if (!catSel) return;
+
+  function fmt(n) {
+    if (n === 0) return "0";
+    if (Math.abs(n) >= 1e7 || (Math.abs(n) < 1e-4 && n !== 0)) return n.toExponential(4);
+    return parseFloat(n.toPrecision(6)).toString();
+  }
+
+  function populateUnits(cat) {
+    const us = UNITS[cat].units;
+    [fromSel, toSel].forEach(sel => { sel.innerHTML = ""; });
+    us.forEach((u, i) => {
+      fromSel.add(new Option(`${u.name} (${u.symbol})`, i));
+      toSel.add(new Option(`${u.name} (${u.symbol})`, i));
+    });
+    toSel.selectedIndex = Math.min(2, us.length - 1);
+    convert();
+  }
+
+  function convert() {
+    const cat  = catSel.value;
+    const us   = UNITS[cat].units;
+    const from = us[+fromSel.value];
+    const to   = us[+toSel.value];
+    const val  = parseFloat(valInp.value);
+    if (isNaN(val)) { resEl.textContent = "—"; resLbl.textContent = "enter a value"; return; }
+    const base   = val * from.factor;
+    const result = base / to.factor;
+    resEl.textContent  = `${fmt(result)} ${to.symbol}`;
+    resLbl.textContent = `${val} ${from.symbol} = ${fmt(result)} ${to.symbol}`;
+    if (tblBody) {
+      tblBody.innerHTML = us.map(u =>
+        `<tr><td>${u.name}</td><td>${u.symbol}</td><td>${fmt(base / u.factor)}</td></tr>`
+      ).join("");
+    }
+  }
+
+  catSel.addEventListener("change",  () => populateUnits(catSel.value));
+  fromSel.addEventListener("change", convert);
+  toSel.addEventListener("change",   convert);
+  valInp.addEventListener("input",   convert);
+  populateUnits(catSel.value);
+
+  document.getElementById("uc-swap").addEventListener("click", () => {
+    const tmp = fromSel.selectedIndex;
+    fromSel.selectedIndex = toSel.selectedIndex;
+    toSel.selectedIndex   = tmp;
+    convert();
+  });
+})();
+
+/* ── Hero stats from app data (runs after app.js) ─────────── */
+window.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    const appsEl   = document.getElementById("hero-stat-apps");
+    const sheetsEl = document.getElementById("hero-stat-sheets");
+    if (appsEl   && typeof apps   !== "undefined") appsEl.textContent   = apps.filter(a => a.category !== "Academic").length;
+    if (sheetsEl && typeof designSheets !== "undefined") sheetsEl.textContent = designSheets.length;
+  }, 200);
+
+  // Sync visible filter pills → hidden sidebar nav-items (app.js uses nav-items)
+  // We duplicate the filter pills (fp-*) but app.js already wired .nav-item[data-filter]
+  // from the hidden sidebar. So we just need to forward clicks.
+  document.querySelectorAll("#filter-pills-row .nav-item[data-filter]").forEach(pill => {
+    // These ARE the same .nav-item[data-filter] elements app.js wired up
+    // (the hidden sidebar ones with id="count-*" are kept for updateCounts())
+  });
+
+  // Keep hero-stat counts in sync with sidebar counts
+  const obsTarget = document.getElementById("count-all");
+  if (obsTarget) {
+    const mo = new MutationObserver(() => {
+      const appsEl = document.getElementById("hero-stat-apps");
+      if (appsEl) appsEl.textContent = obsTarget.textContent || "—";
+    });
+    mo.observe(obsTarget, { childList: true });
+  }
+});
+
+/* ── Active nav link on scroll ────────────────────────────── */
+(function() {
+  const links = document.querySelectorAll(".nav-link");
+  const sects = ["apps", "tools"];
+  window.addEventListener("scroll", () => {
+    let cur = "";
+    sects.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && scrollY >= el.offsetTop - 80) cur = id;
+    });
+    links.forEach(a => a.classList.toggle("active", a.getAttribute("href") === `#${cur}`));
+  }, { passive: true });
+})();
+</script>
+
+</body>
+</html>
