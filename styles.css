@@ -1372,6 +1372,80 @@ select.form-control {
 .conversion-table td:last-child  { color: var(--main-color); font-weight: 500; }
 
 /* =============================================================
+   TOOLS — LAND AREA CONVERTER
+   ============================================================= */
+/* Single input row: input + unit badge side by side */
+.lac-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.lac-input-row .form-control { flex: 1; }
+.lac-unit-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--main-color);
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--roundness);
+  padding: 0.4rem 0.6rem;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+}
+
+/* Multi-field input row: 4 sub-unit fields */
+.lac-multi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+.lac-sub-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+.lac-sub-field .form-control {
+  text-align: center;
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+}
+.lac-sub-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--main-color);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Multi-value result display */
+.lac-multi-result-box { padding: 1rem 0.75rem; }
+.lac-multi-result {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+.lac-result-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+.lac-result-val {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--main-color);
+  line-height: 1.1;
+}
+.lac-result-sub {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--sub-color);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* =============================================================
    DETAIL MODAL
    ============================================================= */
 .modal-overlay {
@@ -1551,8 +1625,10 @@ select.form-control {
   border-radius: var(--roundness);
   width: 540px;
   max-width: 96vw;
-  max-height: 90vh;
-  overflow-y: auto;
+  height: min(90vh, 760px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   box-shadow: 0 24px 64px rgba(0,0,0,0.5);
 }
 
@@ -1563,6 +1639,7 @@ select.form-control {
   padding: 1.25rem 1.5rem 1rem;
   border-bottom: 1px solid var(--border-color);
   gap: 1rem;
+  flex-shrink: 0;
 }
 .theme-modal-title-group { flex: 1; }
 .theme-modal-title { font-size: 0.9rem; font-weight: 700; color: var(--text-color); }
@@ -1573,7 +1650,12 @@ select.form-control {
 }
 .theme-modal-close:hover { color: var(--text-color); }
 
-.theme-modal-body { padding: 1.5rem; }
+.theme-modal-body {
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
 
 .theme-section-label {
   font-size: 0.62rem;
@@ -1590,9 +1672,6 @@ select.form-control {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   gap: 0.5rem;
-  max-height: 340px;
-  overflow-y: auto;
-  padding-right: 4px;
 }
 
 .theme-swatch {

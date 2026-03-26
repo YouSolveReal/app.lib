@@ -38,6 +38,16 @@ const engineeringTools = [
     toolKey: "unit-converter",
     icon: "converter",
   },
+  {
+    id: "tool-002",
+    name: "Land Area Converter",
+    version: "1.0.0",
+    category: "Civil",
+    tags: ["Land", "Area", "Ropani", "Bigha", "Nepal", "Survey"],
+    description: "Convert land area between Sq.m, Sq.ft, Ropani-Aana-Paisa-Daam, and Bigha-Kattha-Dhur-Kanwa. Covers all 16 conversion paths with real-time results.",
+    toolKey: "land-area",
+    icon: "land",
+  },
 ];
 
 // ── Design Sheets data ────────────────────────────────────────────────────
@@ -785,6 +795,7 @@ function renderDesignSheets() {
 function toolIconSvg(icon) {
   const icons = {
     converter: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--main-color)"><path d="M8 3H5a2 2 0 00-2 2v3"/><path d="M21 3h-3"/><path d="M21 12v3a2 2 0 01-2 2h-3"/><path d="M3 12v3"/><path d="M8 21H5a2 2 0 01-2-2v-3"/><line x1="9" y1="12" x2="15" y2="12"/><polyline points="12 9 15 12 12 15"/></svg>`,
+    land: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--main-color)"><polygon points="3 20 9 4 15 14 19 9 21 20 3 20"/><line x1="3" y1="20" x2="21" y2="20"/></svg>`,
   };
   return icons[icon] || `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--main-color)"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
 }
@@ -1172,7 +1183,133 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initial render (switchTab above handles renderCards / renderDesignSheets / renderAcademic)
   updateCounts();
+
+  // Initialise inline tool UIs
+  initLandAreaConverter();
 });
+
+/* ─────────────────────────────────────────────
+   Land Area Converter Tool
+───────────────────────────────────────────── */
+function initLandAreaConverter() {
+  const ROPANI  = 508.7371;
+  const BIGHA   = 6772.63;
+  const SQFT    = 0.092903038757389;
+  const THRESH  = 0.998;
+
+  const LABELS = {
+    sqm:  { badge: "Sq.m",  multi: null },
+    sqft: { badge: "Sq.ft", multi: null },
+    rapd: { badge: null,    multi: ["R", "A", "P", "D"] },
+    bkdk: { badge: null,    multi: ["B", "K", "D", "Ka"] },
+  };
+
+  function isMulti(u) { return u === "rapd" || u === "bkdk"; }
+
+  function numVal(id) {
+    const v = parseFloat(document.getElementById(id)?.value);
+    return isNaN(v) ? 0 : Math.max(0, v);
+  }
+
+  function toSqm(unit, vals) {
+    if (unit === "sqm")  return vals[0];
+    if (unit === "sqft") return vals[0] * SQFT;
+    if (unit === "rapd") {
+      const [r, a, p, d] = vals;
+      return (r + ((d / 4 + p) / 4 + a) / 16) * ROPANI;
+    }
+    // bkdk
+    const [b, k, d, kw] = vals;
+    return (b + ((kw / 16 + d) / 20 + k) / 20) * BIGHA;
+  }
+
+  function decompose(sqm, base, divs) {
+    let val = sqm / base;
+    const parts = [];
+    for (const div of divs) {
+      const whole = Math.floor(val);
+      const frac  = val - whole;
+      parts.push(whole);
+      val = frac >= THRESH ? div : frac * div;
+    }
+    parts.push(+val.toFixed(3));
+    return parts;
+  }
+
+  function fromSqm(unit, sqm) {
+    if (unit === "sqm")  return [+sqm.toFixed(3)];
+    if (unit === "sqft") return [+(sqm / SQFT).toFixed(3)];
+    if (unit === "rapd") return decompose(sqm, ROPANI, [16, 4, 4]);
+    return decompose(sqm, BIGHA, [20, 20, 16]);
+  }
+
+  function convert() {
+    const from = document.getElementById("lac-from")?.value;
+    const to   = document.getElementById("lac-to")?.value;
+    if (!from || !to) return;
+
+    const fromMulti = isMulti(from);
+    const toMulti   = isMulti(to);
+
+    // Toggle input panels
+    document.getElementById("lac-input-single").style.display = fromMulti ? "none" : "";
+    document.getElementById("lac-input-multi").style.display  = fromMulti ? ""     : "none";
+
+    // Toggle output panels
+    document.getElementById("lac-output-single").style.display = toMulti ? "none" : "";
+    document.getElementById("lac-output-multi").style.display  = toMulti ? ""     : "none";
+
+    // Update labels
+    if (!fromMulti) {
+      const el = document.getElementById("lac-val-unit");
+      if (el) el.textContent = LABELS[from].badge;
+    } else {
+      LABELS[from].multi.forEach((lbl, i) => {
+        const el = document.getElementById(`lac-l${i + 1}`);
+        if (el) el.textContent = lbl;
+      });
+    }
+    if (!toMulti) {
+      const el = document.getElementById("lac-result-unit");
+      if (el) el.textContent = LABELS[to].badge;
+    } else {
+      LABELS[to].multi.forEach((lbl, i) => {
+        const el = document.getElementById(`lac-rl${i + 1}`);
+        if (el) el.textContent = lbl;
+      });
+    }
+
+    // Read input
+    const inputVals = fromMulti
+      ? [numVal("lac-m1"), numVal("lac-m2"), numVal("lac-m3"), numVal("lac-m4")]
+      : [numVal("lac-val")];
+
+    // Convert
+    const sqm    = toSqm(from, inputVals);
+    const result = fromSqm(to, sqm);
+
+    // Render output
+    if (!toMulti) {
+      const el = document.getElementById("lac-result");
+      if (el) el.textContent = result[0].toLocaleString();
+    } else {
+      result.forEach((v, i) => {
+        const el = document.getElementById(`lac-r${i + 1}`);
+        if (el) el.textContent = v;
+      });
+    }
+  }
+
+  // Wire events
+  ["lac-from", "lac-to"].forEach(id =>
+    document.getElementById(id)?.addEventListener("change", convert)
+  );
+  ["lac-val", "lac-m1", "lac-m2", "lac-m3", "lac-m4"].forEach(id =>
+    document.getElementById(id)?.addEventListener("input", convert)
+  );
+
+  convert(); // initial render
+}
 
 // When browser restores page from bfcache (back/forward navigation),
 // refresh design sheet counts so the updated number is shown immediately.

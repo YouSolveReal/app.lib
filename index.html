@@ -457,6 +457,107 @@
       </div>
       <!-- /Unit Converter -->
 
+      <!-- ── Land Area Converter ── -->
+      <div class="tool-content" id="tool-content-land-area" style="display:none;">
+        <div class="tool-layout">
+
+          <!-- Input panel -->
+          <div class="tool-panel">
+            <p class="tool-panel-title">// input</p>
+            <div class="form-group">
+              <label for="lac-from">convert from</label>
+              <select id="lac-from" class="form-control">
+                <option value="sqm">Square Meter (Sq.m)</option>
+                <option value="sqft">Square Feet (Sq.ft)</option>
+                <option value="rapd">Ropani – Aana – Paisa – Daam</option>
+                <option value="bkdk">Bigha – Kattha – Dhur – Kanwa</option>
+              </select>
+            </div>
+            <!-- Single-value input (Sq.m / Sq.ft) -->
+            <div id="lac-input-single" class="form-group">
+              <label for="lac-val">value</label>
+              <div class="lac-input-row">
+                <input id="lac-val" type="number" min="0" step="any" class="form-control" placeholder="0" />
+                <span class="lac-unit-badge" id="lac-val-unit">Sq.m</span>
+              </div>
+            </div>
+            <!-- Multi-value input (RAPD / BKDK) -->
+            <div id="lac-input-multi" class="form-group" style="display:none;">
+              <label>value</label>
+              <div class="lac-multi-row">
+                <div class="lac-sub-field">
+                  <input id="lac-m1" type="number" min="0" step="1" class="form-control" placeholder="0">
+                  <span class="lac-sub-label" id="lac-l1">R</span>
+                </div>
+                <div class="lac-sub-field">
+                  <input id="lac-m2" type="number" min="0" step="1" class="form-control" placeholder="0">
+                  <span class="lac-sub-label" id="lac-l2">A</span>
+                </div>
+                <div class="lac-sub-field">
+                  <input id="lac-m3" type="number" min="0" step="1" class="form-control" placeholder="0">
+                  <span class="lac-sub-label" id="lac-l3">P</span>
+                </div>
+                <div class="lac-sub-field">
+                  <input id="lac-m4" type="number" min="0" step="any" class="form-control" placeholder="0">
+                  <span class="lac-sub-label" id="lac-l4">D</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Output panel -->
+          <div class="tool-panel">
+            <p class="tool-panel-title">// result</p>
+            <div class="form-group">
+              <label for="lac-to">convert to</label>
+              <select id="lac-to" class="form-control">
+                <option value="sqm">Square Meter (Sq.m)</option>
+                <option value="sqft" selected>Square Feet (Sq.ft)</option>
+                <option value="rapd">Ropani – Aana – Paisa – Daam</option>
+                <option value="bkdk">Bigha – Kattha – Dhur – Kanwa</option>
+              </select>
+            </div>
+            <!-- Single-value output -->
+            <div id="lac-output-single">
+              <div class="result-box">
+                <div class="result-value" id="lac-result">—</div>
+                <div class="result-label" id="lac-result-unit">Sq.ft</div>
+              </div>
+            </div>
+            <!-- Multi-value output -->
+            <div id="lac-output-multi" style="display:none;">
+              <div class="result-box lac-multi-result-box">
+                <div class="lac-multi-result">
+                  <div class="lac-result-item"><span class="lac-result-val" id="lac-r1">0</span><span class="lac-result-sub" id="lac-rl1">R</span></div>
+                  <div class="lac-result-item"><span class="lac-result-val" id="lac-r2">0</span><span class="lac-result-sub" id="lac-rl2">A</span></div>
+                  <div class="lac-result-item"><span class="lac-result-val" id="lac-r3">0</span><span class="lac-result-sub" id="lac-rl3">P</span></div>
+                  <div class="lac-result-item"><span class="lac-result-val" id="lac-r4">0</span><span class="lac-result-sub" id="lac-rl4">D</span></div>
+                </div>
+              </div>
+            </div>
+            <!-- Reference table -->
+            <div style="margin-top:1.5rem;">
+              <p class="tool-panel-title" style="margin-bottom:0.75rem;">// reference</p>
+              <table class="conversion-table">
+                <thead><tr><th>unit</th><th>= Sq.m</th></tr></thead>
+                <tbody>
+                  <tr><td>1 Ropani</td><td>508.737</td></tr>
+                  <tr><td>1 Aana</td><td>31.796</td></tr>
+                  <tr><td>1 Paisa</td><td>7.949</td></tr>
+                  <tr><td>1 Daam</td><td>1.987</td></tr>
+                  <tr><td>1 Bigha</td><td>6,772.63</td></tr>
+                  <tr><td>1 Kattha</td><td>338.631</td></tr>
+                  <tr><td>1 Dhur</td><td>16.931</td></tr>
+                  <tr><td>1 Kanwa</td><td>1.058</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <!-- /Land Area Converter -->
+
     </div>
     <div class="modal-footer">
       <div id="tool-modal-dlcount" style="font-size:0.72rem; color:var(--sub-color);"></div>
