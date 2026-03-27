@@ -3930,3 +3930,273 @@ footer {
   --error-color:   #b29a91;
   --border-color:  color-mix(in srgb, #ddb4a7 30%, #f3dbda);
 }
+
+/* =============================================================
+   LEVEL SURVEY TOOL — full-screen modal
+   ============================================================= */
+
+/* ── Full-screen overlay (no background-click dismiss) ─────── */
+.ls-full-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(3px);
+  align-items: stretch;
+  justify-content: stretch;
+}
+.ls-full-overlay.open {
+  display: flex;
+}
+
+/* Dialog fills the screen */
+.ls-full-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg-color);
+  overflow: hidden;
+}
+
+/* ── Top title bar ──────────────────────────────────────────── */
+.ls-full-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1rem;
+  height: 46px;
+  background: var(--sub-alt-color);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+.ls-full-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.ls-full-name { font-size: 0.82rem; font-weight: 700; color: var(--text-color); }
+.ls-full-ver  { font-size: 0.68rem; color: var(--sub-color); }
+.ls-full-cat  {
+  font-size: 0.6rem; padding: 0.18rem 0.5rem; border-radius: 999px;
+  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500;
+  background: color-mix(in srgb, #e2b714 15%, transparent);
+  color: #e2b714; border: 1px solid color-mix(in srgb, #e2b714 30%, transparent);
+}
+.ls-full-close-btn {
+  display: flex; align-items: center; gap: 0.35rem;
+  background: none; border: none; color: var(--sub-color);
+  cursor: pointer; font-size: 0.72rem; font-family: var(--font);
+  padding: 0.3rem 0.5rem; border-radius: 3px;
+  transition: color 0.12s, background 0.12s;
+}
+.ls-full-close-btn:hover { color: var(--text-color); background: color-mix(in srgb, var(--sub-color) 10%, transparent); }
+
+/* ── Controls + Inline arithmetic check bar ─────────────────── */
+.ls-ctrl-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1rem;
+  background: color-mix(in srgb, var(--sub-alt-color) 60%, var(--bg-color));
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.ls-ctrl-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+.ls-ctrl-group { display: flex; flex-direction: column; gap: 0.18rem; }
+.ls-ctrl-group label { font-size: 0.6rem; color: var(--sub-color); }
+.ls-ctrl-input  { width: 110px; font-size: 0.76rem !important; padding: 0.3rem 0.45rem !important; height: auto !important; }
+.ls-ctrl-select { width: 200px; font-size: 0.76rem !important; padding: 0.3rem 0.45rem !important; height: auto !important; }
+
+/* Inline arithmetic check items */
+.ls-ci-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  flex-wrap: wrap;
+  padding: 0 0.75rem;
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  flex: 1;
+  min-width: 0;
+}
+.ls-ci-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  white-space: nowrap;
+}
+.ls-ci-lbl { font-size: 0.58rem; color: var(--sub-color); text-transform: lowercase; }
+.ls-ci-val { font-size: 0.78rem; font-weight: 700; color: var(--text-color); font-variant-numeric: tabular-nums; }
+.ls-ci-sep { width: 1px; min-height: 28px; background: var(--border-color); align-self: center; flex-shrink: 0; }
+
+.ls-ctrl-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+.ls-ctrl-vert-sep { width: 1px; height: 22px; background: var(--border-color); }
+
+/* ── Table area (fills remaining height) ────────────────────── */
+.ls-table-scroll {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Survey data grid */
+.ls-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+  min-width: 760px;
+}
+.ls-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--sub-alt-color);
+  color: var(--sub-color);
+  font-size: 0.64rem;
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  padding: 0.5rem 0.35rem;
+  text-align: center;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+  user-select: none;
+}
+.ls-table thead th.ls-calc-hdr { color: var(--main-color); }
+.ls-table thead th.ls-th-sel   { width: 28px; }
+.ls-table tbody tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+  cursor: pointer;
+  transition: background 0.08s;
+}
+.ls-table tbody tr:hover            { background: color-mix(in srgb, var(--sub-color) 5%, transparent); }
+.ls-table tbody tr.ls-row-error     { background: color-mix(in srgb, var(--error-color) 7%, transparent); }
+.ls-table tbody tr.ls-row-selected  {
+  background: color-mix(in srgb, var(--main-color) 10%, transparent) !important;
+  box-shadow: inset 2px 0 0 var(--main-color);
+}
+.ls-table td { padding: 0.15rem 0.3rem; vertical-align: middle; text-align: center; }
+
+/* Row number + selection indicator */
+.ls-td-num {
+  color: var(--sub-color); font-size: 0.6rem; min-width: 24px;
+  user-select: none; padding-left: 0.5rem;
+}
+.ls-td-sel-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--main-color); margin: auto;
+  display: none;
+}
+.ls-row-selected .ls-td-sel-dot { display: block; }
+
+/* Inline table inputs */
+.ls-input {
+  padding: 0.2rem 0.35rem !important;
+  font-size: 0.71rem !important;
+  height: 1.75rem !important;
+  border-radius: 3px !important;
+  text-align: center;
+  min-width: 0;
+}
+.ls-input[data-field="chainage"] { width: 82px; text-align: left; }
+.ls-input[data-field="pDist"]    { width: 70px; }
+.ls-input[data-field="bs"],
+.ls-input[data-field="is"],
+.ls-input[data-field="fs"]       { width: 70px; }
+.ls-input[data-field="remarks"]  { width: 140px; text-align: left; }
+
+/* Calculated cells */
+.ls-td-calc {
+  color: var(--sub-color);
+  font-size: 0.7rem;
+  min-width: 72px;
+  font-variant-numeric: tabular-nums;
+  padding: 0 0.4rem;
+}
+.ls-td-rl {
+  color: var(--main-color);
+  font-weight: 700;
+  font-size: 0.77rem;
+  min-width: 86px;
+  font-variant-numeric: tabular-nums;
+  padding: 0 0.4rem;
+}
+.ls-td-chainage-inherit { color: var(--sub-color); font-style: italic; font-size: 0.65rem; }
+.ls-row-warn { color: var(--error-color); font-size: 0.63rem; cursor: help; margin-left: 3px; }
+
+/* Delete row button */
+.ls-del-btn {
+  background: none; border: none; color: var(--sub-color);
+  cursor: pointer; font-size: 0.72rem;
+  padding: 0.12rem 0.35rem; border-radius: 3px;
+  transition: color 0.12s, background 0.12s; line-height: 1;
+}
+.ls-del-btn:hover { color: var(--error-color); background: color-mix(in srgb, var(--error-color) 12%, transparent); }
+
+/* Insert-between indicator row */
+.ls-insert-hint td {
+  padding: 0 !important; height: 3px;
+  background: color-mix(in srgb, var(--main-color) 60%, transparent);
+}
+
+/* ── Chart viewer modal (stacks above the level survey modal) ── */
+.ls-chart-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.ls-chart-overlay.open { display: flex; }
+.ls-chart-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(1400px, 96vw);
+  height: 88vh;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--roundness);
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.55);
+}
+.ls-chart-dialog-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1rem; height: 44px;
+  background: var(--sub-alt-color); border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+.ls-chart-dialog-title {
+  font-size: 0.78rem; font-weight: 600; color: var(--text-color);
+}
+.ls-chart-dialog-close {
+  display: flex; align-items: center; gap: 0.35rem;
+  background: none; border: none; color: var(--sub-color);
+  cursor: pointer; font-size: 0.72rem; font-family: var(--font);
+  padding: 0.3rem 0.5rem; border-radius: 3px;
+  transition: color 0.12s, background 0.12s;
+}
+.ls-chart-dialog-close:hover { color: var(--text-color); background: color-mix(in srgb, var(--sub-color) 10%, transparent); }
+.ls-chart-dialog-body {
+  flex: 1; padding: 1.25rem; position: relative; overflow: hidden;
+}
+.ls-chart-dialog-body canvas { width: 100% !important; height: 100% !important; }

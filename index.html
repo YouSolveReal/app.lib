@@ -7,6 +7,7 @@
   <meta name="description" content="A curated library of civil engineering desktop apps, web calculators, and academic research by Sanjog." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='2' y='3' width='9' height='9' rx='1.5' fill='%23e2b714'/%3E%3Crect x='13' y='3' width='9' height='9' rx='1.5' fill='%23e2b714' opacity='0.6'/%3E%3Crect x='2' y='14' width='9' height='9' rx='1.5' fill='%23e2b714' opacity='0.6'/%3E%3Crect x='13' y='14' width='9' height='9' rx='1.5' fill='%23e2b714' opacity='0.3'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
   <script data-goatcounter="https://sanjog.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
@@ -558,6 +559,8 @@
       </div>
       <!-- /Land Area Converter -->
 
+      <!-- Level Survey has its own full-screen modal (see #ls-full-overlay below) -->
+
     </div>
     <div class="modal-footer">
       <div id="tool-modal-dlcount" style="font-size:0.72rem; color:var(--sub-color);"></div>
@@ -590,6 +593,150 @@
         <span>loading calculator…</span>
       </div>
       <iframe id="ds-frame" class="ds-frame" src="" frameborder="0" title="Design Sheet Calculator"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     LEVEL SURVEY FULL-SCREEN MODAL
+     Full viewport, no background-click dismiss.
+     ============================================================ -->
+<div class="ls-full-overlay" id="ls-full-overlay" role="dialog" aria-modal="true" aria-label="Level Survey">
+  <div class="ls-full-dialog">
+
+    <!-- Title bar -->
+    <div class="ls-full-bar">
+      <div class="ls-full-title">
+        <span class="ls-full-name">Level Survey</span>
+        <span class="ls-full-ver">v1.0</span>
+        <span class="ls-full-cat">Civil</span>
+      </div>
+      <button class="ls-full-close-btn" id="ls-full-close">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
+          <path d="M2.146 2.854a.5.5 0 11.708-.708L8 7.293l5.146-5.147a.5.5 0 01.708.708L8.707 8l5.147 5.146a.5.5 0 01-.708.708L8 8.707l-5.146 5.147a.5.5 0 01-.708-.708L7.293 8 2.146 2.854z"/>
+        </svg>
+        close
+      </button>
+    </div>
+
+    <!-- Controls + inline arithmetic check -->
+    <div class="ls-ctrl-bar">
+      <div class="ls-ctrl-inputs">
+        <div class="ls-ctrl-group">
+          <label for="ls-ref-rl">ref RL</label>
+          <input id="ls-ref-rl" type="number" step="any" class="form-control ls-ctrl-input"
+                 value="100.000" placeholder="100.000" />
+        </div>
+        <div class="ls-ctrl-group">
+          <label for="ls-method">method</label>
+          <select id="ls-method" class="form-control ls-ctrl-select">
+            <option value="hi">HI — Height of Instrument</option>
+            <option value="rf">Rise &amp; Fall</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Inline arithmetic check -->
+      <div class="ls-ci-bar">
+        <div class="ls-ci-item">
+          <span class="ls-ci-lbl">Σ BS</span>
+          <span class="ls-ci-val" id="ls-sum-bs">—</span>
+        </div>
+        <div class="ls-ci-item">
+          <span class="ls-ci-lbl">Σ FS</span>
+          <span class="ls-ci-val" id="ls-sum-fs">—</span>
+        </div>
+        <div class="ls-ci-sep"></div>
+        <div class="ls-ci-item">
+          <span class="ls-ci-lbl">Σ BS − Σ FS</span>
+          <span class="ls-ci-val" id="ls-diff-bsfs">—</span>
+        </div>
+        <div class="ls-ci-item">
+          <span class="ls-ci-lbl">last − first RL</span>
+          <span class="ls-ci-val" id="ls-diff-rl">—</span>
+        </div>
+        <div class="ls-ci-sep"></div>
+        <div class="ls-ci-item">
+          <span class="ls-ci-lbl">closing error</span>
+          <span class="ls-ci-val" id="ls-error-val">—</span>
+        </div>
+        <!-- Rise &amp; Fall extras (shown when method = rf) -->
+        <div class="ls-col-rf ls-ci-sep" style="display:none;"></div>
+        <div class="ls-col-rf ls-ci-item" style="display:none;">
+          <span class="ls-ci-lbl">Σ rise</span>
+          <span class="ls-ci-val" id="ls-sum-rise">—</span>
+        </div>
+        <div class="ls-col-rf ls-ci-item" style="display:none;">
+          <span class="ls-ci-lbl">Σ fall</span>
+          <span class="ls-ci-val" id="ls-sum-fall">—</span>
+        </div>
+        <div class="ls-col-rf ls-ci-item" style="display:none;">
+          <span class="ls-ci-lbl">Σ rise − Σ fall</span>
+          <span class="ls-ci-val" id="ls-diff-risefall">—</span>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="ls-ctrl-actions">
+        <button class="btn-accent btn-sm" id="ls-add-row" title="Add row after selected (+ key)">+ row</button>
+        <button class="btn-ghost btn-sm"  id="ls-clear"   title="Clear all data">clear</button>
+        <div class="ls-ctrl-vert-sep"></div>
+        <button class="btn-ghost btn-sm"  id="ls-view-profile" title="View full longitudinal profile">profile ↗</button>
+        <button class="btn-ghost btn-sm"  id="ls-view-xs"      title="View cross-section (select a row first)">cross-section ↗</button>
+      </div>
+    </div>
+
+    <!-- Keyboard hints -->
+    <div style="padding:0.2rem 1rem; font-size:0.6rem; color:var(--sub-color); background:var(--bg-color); border-bottom:1px solid var(--border-color); flex-shrink:0;">
+      <kbd style="background:var(--sub-alt-color);border:1px solid var(--border-color);padding:0 3px;border-radius:2px;">Del</kbd> delete selected row &nbsp;·&nbsp;
+      <kbd style="background:var(--sub-alt-color);border:1px solid var(--border-color);padding:0 3px;border-radius:2px;">+</kbd> insert row after selected &nbsp;·&nbsp;
+      <kbd style="background:var(--sub-alt-color);border:1px solid var(--border-color);padding:0 3px;border-radius:2px;">↑↓</kbd> navigate rows &nbsp;·&nbsp;
+      click any row to select it &nbsp;·&nbsp; rows without chainage inherit the chainage above
+    </div>
+
+    <!-- Data entry table (fills remaining height) -->
+    <div class="ls-table-scroll">
+      <table class="ls-table" id="ls-table">
+        <thead>
+          <tr>
+            <th class="ls-th-sel"></th>
+            <th>#</th>
+            <th>chainage</th>
+            <th>p.dist (m)</th>
+            <th>BS</th>
+            <th>IS</th>
+            <th>FS</th>
+            <th class="ls-calc-hdr ls-col-hi">HI</th>
+            <th class="ls-calc-hdr ls-col-rf" style="display:none;">rise</th>
+            <th class="ls-calc-hdr ls-col-rf" style="display:none;">fall</th>
+            <th class="ls-calc-hdr">RL</th>
+            <th>remarks</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="ls-tbody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     LEVEL SURVEY CHART VIEWER MODAL
+     ============================================================ -->
+<div class="ls-chart-overlay" id="ls-chart-overlay" role="dialog" aria-modal="true">
+  <div class="ls-chart-dialog">
+    <div class="ls-chart-dialog-bar">
+      <span class="ls-chart-dialog-title" id="ls-chart-dialog-title">// profile</span>
+      <button class="ls-chart-dialog-close" id="ls-chart-close">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
+          <path d="M2.146 2.854a.5.5 0 11.708-.708L8 7.293l5.146-5.147a.5.5 0 01.708.708L8.707 8l5.147 5.146a.5.5 0 01-.708.708L8 8.707l-5.146 5.147a.5.5 0 01-.708-.708L7.293 8 2.146 2.854z"/>
+        </svg>
+        close
+      </button>
+    </div>
+    <div class="ls-chart-dialog-body">
+      <canvas id="ls-modal-chart"></canvas>
     </div>
   </div>
 </div>

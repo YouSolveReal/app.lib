@@ -48,6 +48,16 @@ const engineeringTools = [
     toolKey: "land-area",
     icon: "land",
   },
+  {
+    id: "tool-003",
+    name: "Level Survey",
+    version: "1.0.0",
+    category: "Civil",
+    tags: ["Survey", "Leveling", "RL", "Chainage", "Profile", "HI Method", "Rise & Fall", "Cross-Section"],
+    description: "Differential leveling data entry with HI and Rise & Fall methods. Enter BS/IS/FS staff readings to compute Reduced Levels, verify arithmetic closure, and view longitudinal profile and cross-section charts.",
+    toolKey: "level-survey",
+    icon: "survey",
+  },
 ];
 
 // ── Design Sheets data ────────────────────────────────────────────────────
@@ -796,6 +806,7 @@ function toolIconSvg(icon) {
   const icons = {
     converter: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--main-color)"><path d="M8 3H5a2 2 0 00-2 2v3"/><path d="M21 3h-3"/><path d="M21 12v3a2 2 0 01-2 2h-3"/><path d="M3 12v3"/><path d="M8 21H5a2 2 0 01-2-2v-3"/><line x1="9" y1="12" x2="15" y2="12"/><polyline points="12 9 15 12 12 15"/></svg>`,
     land: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--main-color)"><polygon points="3 20 9 4 15 14 19 9 21 20 3 20"/><line x1="3" y1="20" x2="21" y2="20"/></svg>`,
+    survey: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--main-color)"><polyline points="3 18 7 10 11 14 15 7 21 18"/><line x1="3" y1="18" x2="21" y2="18"/><line x1="7" y1="18" x2="7" y2="20"/><line x1="15" y1="18" x2="15" y2="20"/><circle cx="7" cy="10" r="1" fill="currentColor"/><circle cx="11" cy="14" r="1" fill="currentColor"/><circle cx="15" cy="7" r="1" fill="currentColor"/></svg>`,
   };
   return icons[icon] || `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--main-color)"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
 }
@@ -842,6 +853,17 @@ function renderTools() {
 }
 
 function launchTool(toolKey) {
+  // Level Survey uses its own full-screen modal — bypass the generic tool modal
+  if (toolKey === "level-survey") {
+    if (typeof window.openLevelSurveyModal === "function") window.openLevelSurveyModal();
+    const tool = engineeringTools.find(t => t.toolKey === toolKey);
+    if (tool) {
+      trackEvent(`launch/${slugify(tool.name)}`, `Launch: ${tool.name}`);
+      incrementCount(slugify(tool.name)).then(() => {});
+    }
+    return;
+  }
+
   const overlay = document.getElementById("tool-modal-overlay");
   if (!overlay) return;
   const tool = engineeringTools.find(t => t.toolKey === toolKey);
@@ -1319,3 +1341,638 @@ window.addEventListener("pageshow", (e) => {
     loadAllDsCounts();
   }
 });
+
+
+/* ================================================================
+   LEVEL SURVEY TOOL
+   Full-screen modal, HI + Rise & Fall, change-point BS+FS,
+   chainage inheritance, row insertion, keyboard shortcuts.
+   Exposes window.openLevelSurveyModal() called by launchTool().
+   ================================================================ */
+(function () {
+  "use strict";
+
+  let rows             = [];
+  let nextId           = 1;
+  let selectedRowId    = null;
+  let modalOpen        = false;
+  let chartDebounce    = null;
+  let profileChartInst = null;  // small chart in modal (unused — charts open in viewer)
+  let xsChartInst      = null;
+  let viewerChart      = null;  // large chart in viewer modal
+  let currentView      = null;  // "profile" | "xs"
+
+  /* ── helpers ─────────────────────────────────────────────── */
+  function cssVar(n) {
+    return getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  }
+
+  function parseChainage(s) {
+    if (!s) return NaN;
+    const m = String(s).match(/^(\d+)\+(\d+(?:\.\d+)?)$/);
+    if (m) return Number(m[1]) * 1000 + parseFloat(m[2]);
+    return parseFloat(s);
+  }
+
+  function fmt3(v) { return v == null || isNaN(v) ? "—" : v.toFixed(3); }
+
+  function escH(s) {
+    if (s == null) return "";
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  /* ── RL calculation ──────────────────────────────────────── */
+  function calculate() {
+    const method  = document.getElementById("ls-method")?.value || "hi";
+    const rawRL   = parseFloat(document.getElementById("ls-ref-rl")?.value);
+    const startRL = isNaN(rawRL) ? 0 : rawRL;
+
+    let curHI        = null;
+    let curRL        = startRL;
+    let prevReading  = null;    // R&F: last staff reading
+    let lastChainage = "";      // for chainage inheritance
+
+    return rows.map(row => {
+      // Effective chainage: own value if filled, otherwise inherit
+      const effectiveChainage = row.chainage !== "" ? row.chainage : lastChainage;
+      if (row.chainage !== "") lastChainage = row.chainage;
+
+      const bs  = row.bs !== "" ? parseFloat(row.bs)  : null;
+      const is_ = row.is !== "" ? parseFloat(row.is)  : null;
+      const fs  = row.fs !== "" ? parseFloat(row.fs)  : null;
+      let hi = null, rise = null, fall = null, rl = null, err = "";
+
+      // ── Count non-null readings ──────────────────────────
+      const count = [bs, is_, fs].filter(v => v !== null).length;
+      if (count === 0) return { ...row, effectiveChainage, hi, rise, fall, rl, err };
+
+      // IS cannot co-exist with BS+FS simultaneously in one row
+      if (is_ !== null && bs !== null && fs !== null) {
+        err = "Cannot have BS, IS and FS all in one row";
+        return { ...row, effectiveChainage, hi, rise, fall, rl, err };
+      }
+
+      if (method === "hi") {
+        /* ── Height of Instrument method ─────────────────── */
+        if (bs !== null && fs !== null) {
+          // Change point: FS closes old setup → RL; BS opens new setup → new HI
+          if (curHI === null) {
+            err = "No HI established above this change point";
+          } else {
+            rl    = curHI - fs;
+            hi    = rl + bs;
+            curRL = rl;
+            curHI = hi;
+          }
+        } else if (bs !== null && is_ !== null) {
+          // BS+IS: set HI from curRL+BS, then IS gives a reading
+          // Show a soft warning but still compute: RL = curRL for BS row
+          rl    = curRL;
+          hi    = rl + bs;
+          curHI = hi;
+          // IS computed from the new HI
+          const rlIS = curHI - is_;
+          curRL = rlIS;
+          err = "BS+IS in same row: consider splitting for standard leveling form";
+        } else if (bs !== null) {
+          rl    = curRL;
+          hi    = rl + bs;
+          curHI = hi;
+        } else if (is_ !== null) {
+          if (curHI === null) { err = "No HI — add a BS row first"; }
+          else { rl = curHI - is_; curRL = rl; }
+        } else if (fs !== null) {
+          if (curHI === null) { err = "No HI — add a BS row first"; }
+          else { rl = curHI - fs; curRL = rl; }
+        }
+      } else {
+        /* ── Rise & Fall method ──────────────────────────── */
+        if (bs !== null && fs !== null) {
+          // Change point: FS → rise/fall → RL; BS becomes next prevReading (same RL)
+          if (prevReading !== null) {
+            const diff = prevReading - fs;
+            rise  = diff >= 0 ? diff : 0;
+            fall  = diff <  0 ? -diff : 0;
+            rl    = curRL + rise - fall;
+            curRL = rl;
+          } else {
+            rl = curRL;
+          }
+          prevReading = bs;  // BS value is used for next row comparison
+        } else if (bs !== null) {
+          rl = curRL;         // carry RL forward — no rise/fall for pure BS
+          prevReading = bs;
+        } else {
+          const reading = is_ ?? fs;
+          if (prevReading === null) {
+            err = "No preceding reading — add a BS row first";
+            rl  = curRL;
+          } else {
+            const diff = prevReading - reading;
+            rise  = diff >= 0 ? diff : 0;
+            fall  = diff <  0 ? -diff : 0;
+            rl    = curRL + rise - fall;
+            curRL = rl;
+          }
+          prevReading = reading;
+        }
+      }
+
+      return { ...row, effectiveChainage, hi, rise, fall, rl, err };
+    });
+  }
+
+  /* ── table render ────────────────────────────────────────── */
+  function renderTable(computed) {
+    const tbody = document.getElementById("ls-tbody");
+    if (!tbody) return;
+    const method = document.getElementById("ls-method")?.value || "hi";
+
+    tbody.innerHTML = computed.map((row, i) => {
+      const isSel    = selectedRowId === row.id;
+      const isCP     = row.bs !== "" && row.fs !== "";  // change point marker
+      const chainageDisplay = row.chainage !== ""
+        ? escH(row.chainage)
+        : `<span class="ls-td-chainage-inherit" title="Inherited: ${escH(row.effectiveChainage)}">${escH(row.effectiveChainage) || "—"}</span>`;
+
+      return `
+        <tr class="ls-data-row${row.err ? " ls-row-error" : ""}${isSel ? " ls-row-selected" : ""}"
+            data-id="${row.id}" tabindex="-1">
+          <td style="padding:0 0.2rem;"><div class="ls-td-sel-dot"></div></td>
+          <td class="ls-td-num">${i + 1}</td>
+          <td>
+            <input class="form-control ls-input" data-id="${row.id}" data-field="chainage"
+                   value="${escH(row.chainage)}" placeholder="0+000" />
+          </td>
+          <td>
+            <input class="form-control ls-input" type="number" step="any"
+                   data-id="${row.id}" data-field="pDist"
+                   value="${escH(row.pDist)}" placeholder="0.000" />
+          </td>
+          <td>
+            <input class="form-control ls-input" type="number" step="any"
+                   data-id="${row.id}" data-field="bs"
+                   value="${escH(row.bs)}" placeholder="" />
+          </td>
+          <td>
+            <input class="form-control ls-input" type="number" step="any"
+                   data-id="${row.id}" data-field="is"
+                   value="${escH(row.is)}" placeholder="" />
+          </td>
+          <td>
+            <input class="form-control ls-input" type="number" step="any"
+                   data-id="${row.id}" data-field="fs"
+                   value="${escH(row.fs)}" placeholder="" />
+          </td>
+          <td class="ls-td-calc ls-col-hi">${fmt3(row.hi)}</td>
+          <td class="ls-td-calc ls-col-rf">${row.rise != null ? row.rise.toFixed(3) : "—"}</td>
+          <td class="ls-td-calc ls-col-rf">${row.fall != null ? row.fall.toFixed(3) : "—"}</td>
+          <td class="ls-td-rl">${fmt3(row.rl)}${row.err ? `<span class="ls-row-warn" title="${escH(row.err)}"> ⚠</span>` : ""}${isCP ? `<span style="color:var(--sub-color);font-size:0.6rem;margin-left:3px;" title="Change point">CP</span>` : ""}</td>
+          <td>
+            <input class="form-control ls-input" data-id="${row.id}" data-field="remarks"
+                   value="${escH(row.remarks)}" placeholder="remark…" />
+          </td>
+          <td>
+            <button class="ls-del-btn" data-id="${row.id}" title="Delete row (Del)">✕</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    // Wire input events
+    tbody.querySelectorAll(".ls-input").forEach(inp => {
+      inp.addEventListener("input", () => {
+        const row = rows.find(r => r.id === parseInt(inp.dataset.id));
+        if (row) { row[inp.dataset.field] = inp.value; update(); }
+      });
+      // Clicking inside an input selects its row
+      inp.addEventListener("focus", () => {
+        const id = parseInt(inp.dataset.id);
+        if (selectedRowId !== id) { selectedRowId = id; highlightSelected(); }
+      });
+    });
+
+    // Wire delete buttons
+    tbody.querySelectorAll(".ls-del-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        deleteRow(parseInt(btn.dataset.id));
+      });
+    });
+
+    // Row click (non-input target) → select for XS + keyboard ops
+    tbody.querySelectorAll(".ls-data-row").forEach(tr => {
+      tr.addEventListener("click", e => {
+        if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
+        const id = parseInt(tr.dataset.id);
+        selectedRowId = (selectedRowId === id) ? null : id;
+        highlightSelected();
+      });
+    });
+
+    // Apply column visibility
+    applyMethodVisibility();
+  }
+
+  function highlightSelected() {
+    document.querySelectorAll("#ls-tbody .ls-data-row").forEach(tr => {
+      const sel = parseInt(tr.dataset.id) === selectedRowId;
+      tr.classList.toggle("ls-row-selected", sel);
+    });
+  }
+
+  /* ── arithmetic check (inline in ctrl bar) ───────────────── */
+  function renderCheck(computed) {
+    const method = document.getElementById("ls-method")?.value || "hi";
+
+    const sumBS    = computed.reduce((a, r) => a + (r.bs !== "" ? (parseFloat(r.bs)  || 0) : 0), 0);
+    const sumFS    = computed.reduce((a, r) => a + (r.fs !== "" ? (parseFloat(r.fs)  || 0) : 0), 0);
+    const diffBSFS = sumBS - sumFS;
+
+    const valid   = computed.filter(r => r.rl != null && !isNaN(r.rl));
+    const firstRL = valid.length > 0 ? valid[0].rl                 : null;
+    const lastRL  = valid.length > 0 ? valid[valid.length - 1].rl  : null;
+    const diffRL  = (firstRL != null && lastRL != null) ? lastRL - firstRL : null;
+    const closErr = diffRL != null ? diffBSFS - diffRL : null;
+
+    const hasBSFS = computed.some(r => r.bs !== "" || r.fs !== "");
+    setText("ls-sum-bs",    hasBSFS ? sumBS.toFixed(3)    : "—");
+    setText("ls-sum-fs",    hasBSFS ? sumFS.toFixed(3)    : "—");
+    setText("ls-diff-bsfs", hasBSFS ? diffBSFS.toFixed(3) : "—");
+    setText("ls-diff-rl",   diffRL != null ? diffRL.toFixed(3) : "—");
+
+    const errEl = document.getElementById("ls-error-val");
+    if (errEl) {
+      if (closErr != null) {
+        errEl.textContent = closErr.toFixed(4);
+        errEl.style.color = Math.abs(closErr) < 0.001
+          ? (cssVar("--success-color") || "#4ec94e")
+          : "var(--error-color)";
+      } else {
+        errEl.textContent = "—";
+        errEl.style.color = "";
+      }
+    }
+
+    if (method === "rf") {
+      const sumRise = computed.reduce((a, r) => a + (r.rise ?? 0), 0);
+      const sumFall = computed.reduce((a, r) => a + (r.fall ?? 0), 0);
+      const hasRF   = computed.some(r => r.rise != null);
+      setText("ls-sum-rise",      hasRF ? sumRise.toFixed(3)             : "—");
+      setText("ls-sum-fall",      hasRF ? sumFall.toFixed(3)             : "—");
+      setText("ls-diff-risefall", hasRF ? (sumRise - sumFall).toFixed(3) : "—");
+    }
+  }
+
+  /* ── column visibility ───────────────────────────────────── */
+  function applyMethodVisibility() {
+    const isRF = (document.getElementById("ls-method")?.value || "hi") === "rf";
+    document.querySelectorAll(".ls-col-hi").forEach(el => el.style.display = isRF ? "none" : "");
+    document.querySelectorAll(".ls-col-rf").forEach(el => el.style.display = isRF ? ""     : "none");
+  }
+
+  /* ── chart helpers ───────────────────────────────────────── */
+  function cd() {
+    return {
+      main:   cssVar("--main-color")    || "#e2b714",
+      text:   cssVar("--text-color")    || "#d1d0c5",
+      sub:    cssVar("--sub-color")     || "#646669",
+      bg:     cssVar("--sub-alt-color") || "#2c2e31",
+      border: cssVar("--border-color")  || "#3a3c40",
+      font:   cssVar("--font")          || "Roboto Mono, monospace",
+    };
+  }
+
+  function baseOpts(c, xTitle) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 200 },
+      plugins: {
+        legend: { labels: { color: c.text, font: { family: c.font, size: 11 } } },
+        tooltip: {
+          backgroundColor: c.bg, borderColor: c.border, borderWidth: 1,
+          titleColor: c.text, bodyColor: c.sub, padding: 10,
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: c.sub, font: { size: 10, family: c.font } },
+          grid:  { color: c.border },
+          title: xTitle ? { display: true, text: xTitle, color: c.sub, font: { size: 10, family: c.font } } : undefined,
+        },
+        y: {
+          ticks: { color: c.sub, font: { size: 10, family: c.font }, callback: v => (+v).toFixed(2) },
+          grid:  { color: c.border },
+          title: { display: true, text: "RL (m)", color: c.sub, font: { size: 10, family: c.font } },
+        },
+      },
+    };
+  }
+
+  function profileDataset(computed, c) {
+    const pts = computed
+      .filter(r => r.rl != null && !isNaN(r.rl)
+               && (r.pDist === "" || Math.abs(parseFloat(r.pDist) || 0) < 0.001))
+      .map(r => ({ x: parseChainage(r.effectiveChainage), y: r.rl, lbl: r.effectiveChainage || "—" }))
+      .filter(p => !isNaN(p.x))
+      .sort((a, b) => a.x - b.x);
+    return { pts, dataset: {
+      label: "Ground RL",
+      data: pts.map(p => p.y),
+      borderColor: c.main, backgroundColor: c.main + "18",
+      pointBackgroundColor: c.main, pointBorderColor: c.main,
+      pointRadius: 5, pointHoverRadius: 7,
+      fill: true, tension: 0.15,
+    }, labels: pts.map(p => p.lbl) };
+  }
+
+  function xsData(computed, rowId) {
+    const selRow = computed.find(r => r.id === rowId);
+    if (!selRow) return null;
+    const chainageLbl = selRow.effectiveChainage || "—";
+
+    const xsPts = computed
+      .filter(r => r.effectiveChainage === selRow.effectiveChainage
+               && r.rl != null && !isNaN(r.rl) && r.pDist !== "")
+      .map(r => ({ x: parseFloat(r.pDist) || 0, y: r.rl }));
+
+    // Include centerline (pDist blank or 0)
+    computed
+      .filter(r => r.effectiveChainage === selRow.effectiveChainage
+               && r.rl != null && !isNaN(r.rl)
+               && (r.pDist === "" || parseFloat(r.pDist) === 0))
+      .forEach(r => {
+        if (!xsPts.find(p => Math.abs(p.x) < 0.001)) xsPts.push({ x: 0, y: r.rl });
+      });
+
+    xsPts.sort((a, b) => a.x - b.x);
+    return { chainageLbl, xsPts };
+  }
+
+  /* ── main update ─────────────────────────────────────────── */
+  function update() {
+    // Preserve focused input
+    const foc = document.activeElement;
+    const fId  = foc?.dataset?.id;
+    const fFld = foc?.dataset?.field;
+    const cS   = foc?.selectionStart;
+    const cE   = foc?.selectionEnd;
+
+    const computed = calculate();
+    renderTable(computed);
+    renderCheck(computed);
+    applyMethodVisibility();
+
+    // Debounce chart-viewer refresh if open
+    if (currentView) {
+      clearTimeout(chartDebounce);
+      chartDebounce = setTimeout(() => {
+        if (currentView === "profile") openProfileViewer(computed);
+        else openXSViewer(computed, selectedRowId);
+      }, 350);
+    }
+
+    // Restore focus
+    if (fId && fFld) {
+      const el = document.querySelector(`#ls-tbody [data-id="${fId}"][data-field="${fFld}"]`);
+      if (el) { el.focus(); try { el.setSelectionRange(cS, cE); } catch (_) {} }
+    }
+  }
+
+  /* ── chart viewer modal ──────────────────────────────────── */
+  function openProfileViewer(computed) {
+    currentView = "profile";
+    const overlay = document.getElementById("ls-chart-overlay");
+    const titleEl = document.getElementById("ls-chart-dialog-title");
+    const canvas  = document.getElementById("ls-modal-chart");
+    if (!overlay || !canvas || typeof Chart === "undefined") return;
+
+    if (titleEl) titleEl.textContent = "// longitudinal profile";
+    overlay.classList.add("open");
+
+    if (viewerChart) { viewerChart.destroy(); viewerChart = null; }
+
+    const c   = cd();
+    const { pts, dataset, labels } = profileDataset(computed, c);
+
+    if (pts.length === 0) {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = `13px ${c.font}`; ctx.fillStyle = c.sub; ctx.textAlign = "center";
+      ctx.fillText("no centerline data (pDist = 0) found", canvas.width / 2, canvas.height / 2);
+      return;
+    }
+
+    const opts = baseOpts(c, "chainage");
+    opts.plugins.tooltip.callbacks = { label: ctx => `  RL: ${ctx.parsed.y.toFixed(3)}` };
+
+    viewerChart = new Chart(canvas, { type: "line", data: { labels, datasets: [dataset] }, options: opts });
+  }
+
+  function openXSViewer(computed, rowId) {
+    currentView = "xs";
+    const overlay = document.getElementById("ls-chart-overlay");
+    const titleEl = document.getElementById("ls-chart-dialog-title");
+    const canvas  = document.getElementById("ls-modal-chart");
+    if (!overlay || !canvas || typeof Chart === "undefined") return;
+
+    const result = rowId ? xsData(computed, rowId) : null;
+
+    if (titleEl) titleEl.textContent = result
+      ? `// cross-section @ ${result.chainageLbl}`
+      : "// cross-section (no row selected)";
+
+    overlay.classList.add("open");
+    if (viewerChart) { viewerChart.destroy(); viewerChart = null; }
+
+    const c = cd();
+
+    if (!result || result.xsPts.length === 0) {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = `13px ${c.font}`; ctx.fillStyle = c.sub; ctx.textAlign = "center";
+      ctx.fillText(rowId ? "no cross-section data at this chainage" : "click a row first, then View XS",
+                   canvas.width / 2, canvas.height / 2);
+      return;
+    }
+
+    const blue = "#88c0d0";
+    const opts = baseOpts(c, "partial distance (m)");
+    opts.scales.x = {
+      type:  "linear",
+      ticks: { color: c.sub, font: { size: 10, family: c.font }, callback: v => v + " m" },
+      grid:  { color: c.border },
+      title: { display: true, text: "partial distance (m)", color: c.sub, font: { size: 10, family: c.font } },
+    };
+    opts.plugins.tooltip.callbacks = {
+      title: ctx => `  dist: ${ctx[0].parsed.x.toFixed(2)} m`,
+      label: ctx => `  RL: ${ctx[0].parsed.y.toFixed(3)}`,
+    };
+
+    viewerChart = new Chart(canvas, {
+      type: "line",
+      data: { datasets: [{
+        label: `XS @ ${result.chainageLbl}`,
+        data: result.xsPts,
+        borderColor: blue, backgroundColor: blue + "18",
+        pointBackgroundColor: blue, pointBorderColor: blue,
+        pointRadius: 6, pointHoverRadius: 8, fill: true, tension: 0.1,
+      }] },
+      options: opts,
+    });
+  }
+
+  function closeViewer() {
+    const overlay = document.getElementById("ls-chart-overlay");
+    if (overlay) overlay.classList.remove("open");
+    currentView = null;
+    if (viewerChart) { viewerChart.destroy(); viewerChart = null; }
+  }
+
+  /* ── row management ──────────────────────────────────────── */
+  function addRow() {
+    const newRow = { id: nextId++, chainage: "", pDist: "", bs: "", is: "", fs: "", remarks: "" };
+    if (selectedRowId != null) {
+      const idx = rows.findIndex(r => r.id === selectedRowId);
+      if (idx >= 0) { rows.splice(idx + 1, 0, newRow); }
+      else           { rows.push(newRow); }
+    } else {
+      rows.push(newRow);
+    }
+    selectedRowId = newRow.id;
+    update();
+    setTimeout(() => {
+      const inp = document.querySelector(`#ls-tbody [data-id="${newRow.id}"][data-field="chainage"]`);
+      if (inp) inp.focus();
+    }, 10);
+  }
+
+  function deleteRow(id) {
+    const idx = rows.findIndex(r => r.id === id);
+    if (idx < 0) return;
+    rows.splice(idx, 1);
+    // Select adjacent row
+    if (selectedRowId === id) {
+      selectedRowId = rows[idx]?.id ?? rows[idx - 1]?.id ?? null;
+    }
+    update();
+  }
+
+  function clearAll() {
+    if (rows.length > 0 && !confirm("Clear all survey data?")) return;
+    rows = []; nextId = 1; selectedRowId = null;
+    for (let i = 0; i < 5; i++) {
+      rows.push({ id: nextId++, chainage: "", pDist: "", bs: "", is: "", fs: "", remarks: "" });
+    }
+    closeViewer();
+    update();
+  }
+
+  /* ── keyboard shortcuts ──────────────────────────────────── */
+  function onKeydown(e) {
+    if (!modalOpen) return;
+    const inInput = document.activeElement?.tagName === "INPUT"
+                 || document.activeElement?.tagName === "SELECT"
+                 || document.activeElement?.tagName === "TEXTAREA";
+
+    // Escape closes chart viewer (not main modal)
+    if (e.key === "Escape") {
+      if (document.getElementById("ls-chart-overlay")?.classList.contains("open")) {
+        closeViewer(); e.preventDefault();
+      }
+      return;
+    }
+
+    // Keys below only when NOT typing in an input
+    if (inInput) return;
+
+    if (e.key === "Delete" || e.key === "Backspace") {
+      if (selectedRowId != null) { deleteRow(selectedRowId); e.preventDefault(); }
+    }
+    if (e.key === "+" || e.key === "Insert") {
+      addRow(); e.preventDefault();
+    }
+    if (e.key === "ArrowDown") {
+      const idx = rows.findIndex(r => r.id === selectedRowId);
+      if (idx < rows.length - 1) { selectedRowId = rows[idx + 1].id; highlightSelected(); e.preventDefault(); }
+    }
+    if (e.key === "ArrowUp") {
+      const idx = rows.findIndex(r => r.id === selectedRowId);
+      if (idx > 0) { selectedRowId = rows[idx - 1].id; highlightSelected(); e.preventDefault(); }
+    }
+  }
+
+  /* ── modal open/close ────────────────────────────────────── */
+  function openModal() {
+    const overlay = document.getElementById("ls-full-overlay");
+    if (!overlay) return;
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+    modalOpen = true;
+    document.addEventListener("keydown", onKeydown);
+    update();
+  }
+
+  function closeModal() {
+    const overlay = document.getElementById("ls-full-overlay");
+    if (overlay) overlay.classList.remove("open");
+    document.body.style.overflow = "";
+    modalOpen = false;
+    document.removeEventListener("keydown", onKeydown);
+    closeViewer();
+  }
+
+  /* ── init (called once when DOM is ready) ────────────────── */
+  function init() {
+    // Seed demo data
+    rows = [
+      { id: nextId++, chainage: "0+000", pDist: "0",   bs: "1.250", is: "",      fs: "",      remarks: "BM (RL = 100.000)" },
+      { id: nextId++, chainage: "0+020", pDist: "0",   bs: "",      is: "0.850", fs: "",      remarks: "" },
+      { id: nextId++, chainage: "0+020", pDist: "-5",  bs: "",      is: "1.100", fs: "",      remarks: "Left XS" },
+      { id: nextId++, chainage: "0+020", pDist: "5",   bs: "",      is: "0.620", fs: "",      remarks: "Right XS" },
+      { id: nextId++, chainage: "0+040", pDist: "0",   bs: "",      is: "0.720", fs: "",      remarks: "" },
+      { id: nextId++, chainage: "0+060", pDist: "0",   bs: "",      is: "",      fs: "1.100", remarks: "TP1" },
+      { id: nextId++, chainage: "0+060", pDist: "0",   bs: "0.950", is: "",      fs: "",      remarks: "TP1" },
+      { id: nextId++, chainage: "0+080", pDist: "0",   bs: "",      is: "0.650", fs: "",      remarks: "" },
+      { id: nextId++, chainage: "0+100", pDist: "0",   bs: "",      is: "",      fs: "0.980", remarks: "End" },
+    ];
+
+    // Close button
+    document.getElementById("ls-full-close")?.addEventListener("click", closeModal);
+
+    // Controls
+    document.getElementById("ls-add-row")       ?.addEventListener("click",  addRow);
+    document.getElementById("ls-clear")          ?.addEventListener("click",  clearAll);
+    document.getElementById("ls-ref-rl")         ?.addEventListener("input",  update);
+    document.getElementById("ls-method")         ?.addEventListener("change", update);
+
+    // Chart viewer buttons
+    document.getElementById("ls-view-profile")?.addEventListener("click", () => {
+      openProfileViewer(calculate());
+    });
+    document.getElementById("ls-view-xs")?.addEventListener("click", () => {
+      openXSViewer(calculate(), selectedRowId);
+    });
+
+    // Chart viewer close
+    document.getElementById("ls-chart-close")?.addEventListener("click", closeViewer);
+
+    // NO background-click handler on ls-full-overlay (intentional)
+  }
+
+  /* ── public entry point ──────────────────────────────────── */
+  window.openLevelSurveyModal = function () {
+    if (!document.getElementById("ls-full-overlay")) return;  // HTML not loaded yet
+    const isFirstOpen = rows.length === 0;
+    if (isFirstOpen) init();
+    openModal();
+  };
+}());
